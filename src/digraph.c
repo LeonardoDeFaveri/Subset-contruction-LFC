@@ -1,6 +1,15 @@
 #include "digraph.h"
 #include "list.h"
 #include <stdlib.h>
+#include <string.h>
+
+// List of attributes:
+const char *FONT_NAME = "font_name";        // 0
+const char *SHAPE = "shape";                // 1
+const char *COLOR_SCHEME = "color_scheme";  // 2
+const char *LABEL = "label";                // 3
+const char *FILL_COLOR = "fill_color";      // 4
+const char *STYLE = "style";                // 5
 
 short is_whitespace(char c) {
     switch (c) {
@@ -14,20 +23,6 @@ short is_whitespace(char c) {
 short is_digit(char c) {
     if (c >= '0' && c <= '9') { return 1; }
     return 0;
-}
-
-char* to_string(struct LIST *list) {
-    if (list == NULL || list->size == 0) { return ""; }
-    char *string = malloc((list->size + 1) * sizeof(char));
-    long index = 0;
-    L_NODE *node = list->first;
-    while (node != NULL) {
-        char c = *(char *) node->value;
-        node = node->next;
-        string[index++] = c;
-    }
-    string[list->size] = '\0';
-    return string;
 }
 
 struct NODE* empty_node() {
@@ -61,6 +56,50 @@ struct DIGRAPH* empty_digraph() {
     graph->nodes_inserted = 0;
 
     return graph;
+}
+
+short set_node_attr(struct NODE *node, char *attr_name, char *attr_value) {
+    if (strcmp(attr_name, FONT_NAME) == 0) {
+        node->font_name = attr_value;
+        return 0;
+    }
+    if (strcmp(attr_name, SHAPE) == 0) {
+        node->shape = attr_value;
+        return 0;
+    }
+    if (strcmp(attr_name, COLOR_SCHEME) == 0) {
+        node->color_scheme = attr_value;
+        return 0;
+    }
+    if (strcmp(attr_name, LABEL) == 0) {
+        node->label = attr_value;
+        return 0;
+    }
+    if (strcmp(attr_name, FILL_COLOR) == 0) {
+        node->fill_color = attr_value;
+        return 0;
+    }
+    if (strcmp(attr_name, STYLE) == 0) {
+        node->style = attr_value;
+        return 0;
+    }
+    return 1;
+}
+
+short set_edge_attr(struct EDGE *edge, char *attr_name, char *attr_value) {
+if (strcmp(attr_name, FONT_NAME) == 0) {
+        edge->font_name = attr_value;
+        return 0;
+    }
+    if (strcmp(attr_name, LABEL) == 0) {
+        edge->label = attr_value;
+        return 0;
+    }
+    if (strcmp(attr_name, STYLE) == 0) {
+        edge->style = attr_value;
+        return 0;
+    }
+    return 1;
 }
 
 void destroy_digraph(struct DIGRAPH *graph) {
