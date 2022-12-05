@@ -4,11 +4,11 @@
 #include <string.h>
 
 // List of attributes:
-const char *FONT_NAME = "font_name";        // 0
+const char *FONT_NAME = "fontname";         // 0
 const char *SHAPE = "shape";                // 1
-const char *COLOR_SCHEME = "color_scheme";  // 2
+const char *COLOR_SCHEME = "colorscheme";   // 2
 const char *LABEL = "label";                // 3
-const char *FILL_COLOR = "fill_color";      // 4
+const char *FILL_COLOR = "fillcolor";       // 4
 const char *STYLE = "style";                // 5
 
 short is_whitespace(char c) {
