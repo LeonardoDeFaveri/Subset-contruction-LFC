@@ -17,6 +17,8 @@
 	char *quoted_string(void);
 
 	char *copy(const char *s);
+
+	extern int line_count;
 %}
 
 %option noyywrap
@@ -31,7 +33,7 @@ NUMBER			[-]?{DIGIT}+(.[0-9]+)?
 
 "/*"            { block_comment(); }
 "//" 			{ inline_comment(); }
-"\n"			{ /* New lines are ignored */ }
+"\n"			{ line_count++; }
 "#"{DIGIT}+     { /* Every output line from C preprocessor is ignored */}
 
 "digraph"       { return(DIGRAPH); }

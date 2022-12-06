@@ -23,6 +23,8 @@
 
     int yylex(void);
     int yyerror(char* fmt, ...);
+
+    int line_count = 1;
 %}
 
 %token <id> ID
@@ -192,7 +194,7 @@ struct ID *new_num(char *value) {
 }
 
 int yyerror(char* fmt, ...) {
-    fprintf(stderr, "Error: ");
+    fprintf(stderr, "Error on line %d: ", line_count);
 
     va_list ap;
     va_start(ap, fmt);
