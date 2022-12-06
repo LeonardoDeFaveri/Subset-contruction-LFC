@@ -5,6 +5,8 @@
     #include "../src/digraph.h"
     #include "../src/list.h"
 
+    extern FILE *yyin;
+
     struct ATTR_PAIR {
         char *attr_name;
         char *attr_value;
@@ -22,8 +24,7 @@
     struct EDGE *default_edge = NULL;
 
     int yylex(void);
-    void yyerror(char **id, struct LIST *nodes, struct LIST *edges, const char *msg);
-    void print_error(const char *fmt, ...);
+    void yyerror(const char *msg, ...);
 
     int line_count = 1;
 %}
@@ -53,14 +54,14 @@
 
 %start graph
 
-%parse-param {char **id} {struct LIST *nodes} {struct LIST *edges}
-
 %%
 
-graph: DIGRAPH id LEFT_CURLY_BRAKET stmt_list RIGHT_CURLY_BRAKET  {
-    *id = $2->value;
-    YYACCEPT;
-};
+graph:
+    %empty  { /*args->id = NULL;*/ }
+    | DIGRAPH id LEFT_CURLY_BRAKET stmt_list RIGHT_CURLY_BRAKET  {
+        //args->id = $2->value;
+        YYACCEPT;
+    };
 
 id: ID          { $$ = $1; }
     | %empty    { $$ = new_id(""); }
@@ -91,20 +92,20 @@ stmt:
 
 attr_name:
     ID              { $$ = $1->value; }
-    | %empty        { print_error("Missing attribute name\n"); YYABORT; }
+    | %empty        { yyerror("Missing attribute name\n"); YYABORT; }
     ;
 
 attr_stmt:
     NODE attr_list      {
         if (default_node == NULL) {
             default_node = empty_node();
-        }
+        }yyerror(
 
         void *item = pop_first($2);
         while (item != NULL) {
             struct ATTR_PAIR *pair = (struct ATTR_PAIR*) item;
             if (set_node_attr(default_node, pair->attr_name, pair->attr_value)) {
-                print_error("\"%s\" isn't a valid attribute for a node", pair->attr_name);
+                yyerror("\"%s\" isn't a valid attribute for a node", pair->attr_name);
                 YYABORT;
             }
             item = pop_first($2);
@@ -119,7 +120,7 @@ attr_stmt:
         while (item != NULL) {
             struct ATTR_PAIR *pair = (struct ATTR_PAIR*) item;
             if (set_edge_attr(default_edge, pair->attr_name, pair->attr_value)) {
-                print_error("\"%s\" isn't a valid attribute for an edge", pair->attr_name);
+                yyerror("\"%s\" isn't a valid attribute for an edge", pair->attr_name);
                 YYABORT;
             }
             item = pop_first($2);
@@ -150,7 +151,7 @@ node_id: ID {
         if ($1->is_number) {
             $$ = atoi($1->value);
         } else {
-            print_error("\"%s\" isn't a valid id for a node. It must be an integer value", $1->value);
+            yyerror("\"%s\" isn't a valid id for a node. It must be an integer value", $1->value);
             YYABORT;
         }
     };
@@ -184,11 +185,7 @@ struct ID *new_num(char *value) {
     return id;
 }
 
-void yyerror(char **id, struct LIST *nodes, struct LIST *edges, const char *msg) {
-    print_error(msg);
-}
-
-void print_error(const char *fmt, ...) {
+void yyerror(const char *fmt, ...) {
     fprintf(stderr, "Error on line %d: ", line_count);
 
     va_list ap;
@@ -225,6 +222,19 @@ void print_error(const char *fmt, ...) {
 }
 
 int main(int argc, char **argv) {
+    if (argc < 2) {
+        fprintf(stderr, "You need to provide a file in input\n");
+        exit(1);
+    }
+
+    FILE *input = fopen(argv[1], "r");
+    if (input == NULL) {
+        fprintf(stderr, "Error: couldn't open \"%s\" file\n", argv[1]);
+        exit(1);
+    }
+
+    yyin = input;
+
     /*#ifdef YYDEBUG
         yydebug = 1;
     #endif*/
@@ -233,16 +243,21 @@ int main(int argc, char **argv) {
     struct LIST *nodes = build_empty_list();
     struct LIST *edges = build_empty_list();
 
-    int res = yyparse(&graph->id, nodes, edges);
+    int res = yyparse();
     
     if (res != 0) {
-        /* FAIL */
+        fprintf(stderr, "Parsing failed\n");
     } else {
-        printf("Successfully parsed a digraph with id: %s\n", graph->id);
+        if (graph->id != NULL) {
+            printf("Successfully parsed a digraph with id: %s\n", graph->id);
+        } else {
+            printf("Well... the file was empty, so of course the parsing went well...\n");
+        }
     }
 
     destroy_digraph(graph);
     destroy_list(nodes);
     destroy_list(edges);
+    fclose(input);
     return res;
 }

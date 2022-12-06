@@ -6,9 +6,10 @@
 	#include "../src/digraph.h"
     #include "../src/list.h"
 
+	extern int line_count;
+
 	int yylex(void);
-	void yyerror(char **id, struct LIST *nodes, struct LIST *edges, const char *msg);
-	void print_error(const char *fmt, ...);
+	void yyerror(const char *fmt, ...);
 
 	struct ID *new_id(char *value);
     struct ID *new_num(char *value);
@@ -18,8 +19,6 @@
 	char *quoted_string(void);
 
 	char *copy(const char *s);
-
-	extern int line_count;
 %}
 
 %option noyywrap
@@ -68,19 +67,23 @@ void block_comment(void)
   
 	while ((c = input()) != 0)      /* (EOF maps to 0) */
 	{
+		if (c == '\n') { line_count++; }
 		if (c == '/' && prev == '*') { return; }
 		prev = c;
 	}
-	print_error("Unterminated block comment");
+	yyerror("Unterminated block comment");
 }
 
 void inline_comment(void) {
 	char c;
 
 	while ((c = input()) != 0) {
-		if (c == '\n') { return; }
+		if (c == '\n') {
+			line_count++;
+			return;
+		}
 	}
-	print_error("Unterminated inline comment");
+	yyerror("Unterminated inline comment");
 }
 
 char *quoted_string() {
@@ -100,7 +103,7 @@ char *quoted_string() {
 		prev = c;
 	}
 
-	print_error("Missing double-quote \" in string");
+	yyerror("Missing double-quote \" in string");
 }
 
 char *copy(const char *s) {
