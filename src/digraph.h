@@ -12,6 +12,7 @@ struct NODE {
 };
 
 struct EDGE {
+    struct NODE *from;
     struct NODE *to;
     char *font_name;
     char *label;

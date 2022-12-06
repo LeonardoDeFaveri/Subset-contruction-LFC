@@ -7,7 +7,8 @@
     #include "../src/list.h"
 
 	int yylex(void);
-	int yyerror(char* fmt, ...);
+	void yyerror(char **id, struct LIST *nodes, struct LIST *edges, const char *msg);
+	void print_error(char *fmt, ...);
 
 	struct ID *new_id(char *value);
     struct ID *new_num(char *value);
@@ -70,7 +71,7 @@ void block_comment(void)
 		if (c == '/' && prev == '*') { return; }
 		prev = c;
 	}
-	yyerror("Unterminated block comment");
+	print_error("Unterminated block comment");
 }
 
 void inline_comment(void) {
@@ -79,7 +80,7 @@ void inline_comment(void) {
 	while ((c = input()) != 0) {
 		if (c == '\n') { return; }
 	}
-	yyerror("Unterminated inline comment");
+	print_error("Unterminated inline comment");
 }
 
 char *quoted_string() {
@@ -99,7 +100,7 @@ char *quoted_string() {
 		prev = c;
 	}
 
-	yyerror("Missing double-quote \" in string");
+	print_error("Missing double-quote \" in string");
 }
 
 char *copy(const char *s) {
