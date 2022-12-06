@@ -8,7 +8,7 @@
 
 	int yylex(void);
 	void yyerror(char **id, struct LIST *nodes, struct LIST *edges, const char *msg);
-	void print_error(char *fmt, ...);
+	void print_error(const char *fmt, ...);
 
 	struct ID *new_id(char *value);
     struct ID *new_num(char *value);
