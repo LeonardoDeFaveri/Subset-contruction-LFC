@@ -1,14 +1,22 @@
 %{
 	#include <stdio.h>
 	#include <stdlib.h>
+	#include <string.h>
     #include "digraph.tab.h"
 	#include "../src/digraph.h"
     #include "../src/list.h"
 
 	int yylex(void);
-    int yyerror(const char* s);
-	void comment(void);
+	int yyerror(char* fmt, ...);
+
+	struct ID *new_id(char *value);
+    struct ID *new_num(char *value);
+
+	void block_comment(void);
 	void inline_comment(void);
+	char *quoted_string(void);
+
+	char *copy(const char *s);
 %}
 
 %option noyywrap
@@ -16,33 +24,25 @@
 DIGIT           [0-9]
 LETTER          [a-zA-Z]
 EXTRA_CHAR      [\200-\377]
-CHAR            ({LETTER}|{EXTRA_CHAR}|DIGIT|_)
+CHAR            ({LETTER}|{EXTRA_CHAR}|_)
 NUMBER			[-]?{DIGIT}+(.[0-9]+)?
 
 %%
 
-"/*"            { comment(); }
+"/*"            { block_comment(); }
 "//" 			{ inline_comment(); }
 "\n"			{ /* New lines are ignored */ }
 "#"{DIGIT}+     { /* Every output line from C preprocessor is ignored */}
 
-"digraph"       { yylval.digraph = empty_digraph(); return(DIGRAPH); }
+"digraph"       { return(DIGRAPH); }
 
-"node"          { yylval.node = empty_node(); return(NODE); }
-"edge"          { yylval.edge = empty_edge(); return(EDGE); }
-
-"fontname"      { yylval.attr_name = yytext; return(FONT_NAME); }
-"shape"         { yylval.attr_name = yytext; return(SHAPE); }
-"colorscheme"   { yylval.attr_name = yytext; return(COLOR_SCHEME); }
-"fillcolor"     { yylval.attr_name = yytext; return(FILL_COLOR); }
-"label"         { yylval.attr_name = yytext; return(LABEL); }
-"style"         { yylval.attr_name = yytext; return(STYLE); }
+"node"          { return(NODE); }
+"edge"          { return(EDGE); }
 
 "eps"           { return(EPS); }
 
 ","				{ return(COMMA); }
 ";"				{ return(SEMI_COLON); }
-":"				{ return(COLON); }
 
 "="				{ return(EQU_OP); }
 "->"            { return(EDGE_OP); }
@@ -52,24 +52,14 @@ NUMBER			[-]?{DIGIT}+(.[0-9]+)?
 "{"				{ return(LEFT_CURLY_BRAKET); }
 "}"				{ return(RIGHT_CURLY_BRAKET); }
 
-"n"				{ yylval.compass = yytext; return(COMPASS); }
-"ne"			{ yylval.compass = yytext; return(COMPASS); }
-"e"				{ yylval.compass = yytext; return(COMPASS); }
-"se"			{ yylval.compass = yytext; return(COMPASS); }
-"s"				{ yylval.compass = yytext; return(COMPASS); }
-"sw"			{ yylval.compass = yytext; return(COMPASS); }
-"w"				{ yylval.compass = yytext; return(COMPASS); }
-"nw"			{ yylval.compass = yytext; return(COMPASS); }
-"c"				{ yylval.compass = yytext; return(COMPASS); }
-"_"				{ yylval.compass = yytext; return(COMPASS); }
+{NUMBER}					{ yylval.id = new_num(copy(yytext)); return(ID); }
+{CHAR}({CHAR}|{DIGIT})*  	{ yylval.id = new_id(copy(yytext)); return(ID); }
+\"				{ yylval.id = new_id(quoted_string());; return(ID); }
 
-{NUMBER}					{ yylval.id = yytext; return(ID); }
-{CHAR}+({CHAR}|{DIGIT})*    { yylval.id = yytext; return(ID); }
-\"(\\.|\\\n|.)*\"         	{ yylval.id = yytext; return(ID); }
 
 %%
 
-void comment(void)
+void block_comment(void)
 {
 	char c, prev = 0;
   
@@ -88,4 +78,32 @@ void inline_comment(void) {
 		if (c == '\n') { return; }
 	}
 	yyerror("Unterminated inline comment");
+}
+
+char *quoted_string() {
+	char c, prev = 0;
+
+	struct LIST *text = build_empty_list();
+
+	while ((c = input()) != 0) {
+		if (c == '"' && prev != '\\') {
+			char *str = to_string(text);
+			destroy_list(text);
+			return str;
+		}
+		char *character = malloc(sizeof(char));
+		*character = c;
+		push_back(text, (void *) character);
+		prev = c;
+	}
+
+	yyerror("Missing double-quote \" in string");
+}
+
+char *copy(const char *s) {
+	size_t len = strlen(s);
+	char *str = malloc(sizeof(char) * (len + 1));
+	strcpy(str, s);
+	str[len] = '\0';
+	return str;
 }

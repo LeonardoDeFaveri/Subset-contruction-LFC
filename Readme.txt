@@ -41,4 +41,5 @@ Trovate un automa di esempio in esempio.dot
 
 Documento accompagnatorio
 ----------------------------------
-Deve contenere istruzioni per la compilazione e qualunque altra info ritenuta interessante.
+Deve contenere istruzioni per la compilazione e qualunque altra info ritenuta
+interessante.

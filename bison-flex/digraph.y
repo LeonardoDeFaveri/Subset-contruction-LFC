@@ -3,6 +3,7 @@
     #include <stdlib.h>
     #include <stdarg.h>
     #include "../src/digraph.h"
+    #include "../src/list.h"
 
     struct ATTR_PAIR {
         char *attr_name;
@@ -10,42 +11,57 @@
     };
     struct ATTR_PAIR *new_pair(char *attr_name, char *attr_value);
 
+    struct ID {
+        short is_number;
+        char *value;
+    };
+    struct ID *new_id(char *value);
+    struct ID *new_num(char *value);
+
+    struct NODE *default_node = NULL;
+    struct EDGE *default_edge = NULL;
+
     int yylex(void);
     int yyerror(char* fmt, ...);
 %}
 
 %token <id> ID
-%token <digraph> DIGRAPH
-%token <node> NODE
-%token <edge> EDGE
+%token DIGRAPH
+%token NODE
+%token EDGE
 %token <attr_name> FONT_NAME SHAPE COLOR_SCHEME FILL_COLOR LABEL STYLE
 %token EPS
-%token COMMA SEMI_COLON COLON
+%token COMMA SEMI_COLON
 %token EDGE_OP EQU_OP
 %token LEFT_SQUARE_BRAKET RIGHT_SQUARE_BRAKET
 %token LEFT_CURLY_BRAKET RIGHT_CURLY_BRAKET
-%token <compass> COMPASS
 
 %union {
-    struct DIGRAPH *digraph;
     struct NODE *node;
     struct EDGE *edge;
-    char *id;
+    struct ID *id;
     char *attr_name;
-    char *compass;
+    struct LIST *attr_list;
+    int id_val;
 }
 
 %type <id> id
 %type <attr_name> attr_name
+%type <attr_list> attr_list a_list
+%type <id_val> node_id
+%type <digraph> graph
 
 %start graph
 
 %%
 
-graph: DIGRAPH id LEFT_CURLY_BRAKET stmt_list RIGHT_CURLY_BRAKET  { printf("Succefully parsed a digraph with id = \"%s\"", $2); exit(0); };
+graph: DIGRAPH id LEFT_CURLY_BRAKET stmt_list RIGHT_CURLY_BRAKET  {
+    printf("Succefully parsed a digraph with id = \"%s\"", $2->value);
+    return 0;
+};
 
 id: ID          { $$ = $1; }
-    | %empty    { $$ = ""; }
+    | %empty    { $$ = new_id(""); }
     ;   
 
 stmt_list:
@@ -72,52 +88,70 @@ stmt:
     ;
 
 attr_name:
-    FONT_NAME       { $$ = $1; }
-    | SHAPE         { $$ = $1; }
-    | COLOR_SCHEME  { $$ = $1; }
-    | FILL_COLOR    { $$ = $1; }
-    | LABEL         { $$ = $1; }
-    | STYLE         { $$ = $1; }
+    ID              { $$ = $1->value; }
     | %empty        { yyerror("Missing attribute name\n"); exit(1); }
-    | ID            { yyerror("%s is not a valid attribute name\n", $1); exit(1); }
     ;
 
 attr_stmt:
-    NODE attr_list
-    | EDGE attr_list
+    NODE attr_list      {
+        if (default_node == NULL) {
+            default_node = empty_node();
+        }
+
+        void *item = pop_first($2);
+        while (item != NULL) {
+            struct ATTR_PAIR *pair = (struct ATTR_PAIR*) item;
+            if (set_node_attr(default_node, pair->attr_name, pair->attr_value)) {
+                yyerror("\"%s\" isn't a valid attribute for a node", pair->attr_name);
+                exit(1);
+            }
+            item = pop_first($2);
+        }
+    }
+    | EDGE attr_list {
+        if (default_edge == NULL) {
+            default_edge = empty_edge();
+        }
+
+        void *item = pop_first($2);
+        while (item != NULL) {
+            struct ATTR_PAIR *pair = (struct ATTR_PAIR*) item;
+            if (set_edge_attr(default_edge, pair->attr_name, pair->attr_value)) {
+                yyerror("\"%s\" isn't a valid attribute for an edge", pair->attr_name);
+                exit(1);
+            }
+            item = pop_first($2);
+        }
+    }
     ;
 
-attr_list: LEFT_SQUARE_BRAKET optional_a_list RIGHT_SQUARE_BRAKET optional_attr_list;
+attr_list:
+    %empty  { $$ = build_empty_list(); }
+    | LEFT_SQUARE_BRAKET a_list RIGHT_SQUARE_BRAKET attr_list {
+        $$ = $4;
+        push_list($$, $2);
+    };
 
-optional_attr_list:
-    %empty
-    | attr_list
-    ;
+a_list:
+    %empty      { $$ = build_empty_list(); }
+    | attr_name EQU_OP ID separator a_list {
+        $$ = $5;
+        struct ATTR_PAIR *pair = new_pair($1, $3->value);
+        push_back($$, (void *) pair);
+    };
 
-a_list: attr_name EQU_OP ID separator optional_a_list;
+node_stmt: node_id attr_list;  
 
-optional_a_list:
-    %empty
-    | a_list
-    ;
+edge_stmt: node_id edge_rhs attr_list;
 
-node_stmt: node_id optional_attr_list;
-
-edge_stmt: node_id edge_rhs optional_attr_list;
-
-port:
-    COLON ID port_aux
-    | port_aux
-    ;
-
-optional_port:
-    %empty
-    | port
-    ;
-
-node_id: ID optional_port;
-
-port_aux: COLON COMPASS;
+node_id: ID {
+        if ($1->is_number) {
+            $$ = atoi($1->value);
+        } else {
+            yyerror("\"%s\" isn't a valid id for a node. It must be an integer value", $1->value);
+            exit(1);
+        }
+    };
 
 edge_rhs: EDGE_OP node_id optional_edge_rhs;
 
@@ -129,6 +163,10 @@ optional_edge_rhs:
 %%
 
 int main(int argc, char **argv) {
+    /*#ifdef YYDEBUG
+        yydebug = 1;
+    #endif*/
+
     return yyparse ();
     return 0;
 }
@@ -138,6 +176,19 @@ struct ATTR_PAIR *new_pair(char *attr_name, char *attr_value) {
     pair->attr_name = attr_name;
     pair->attr_value = attr_value;
     return pair;
+}
+
+struct ID *new_id(char *value) {
+    struct ID *id = malloc(sizeof(struct ID));
+    id->is_number = 0;
+    id->value = value;
+    return id;
+}
+struct ID *new_num(char *value) {
+    struct ID *id = malloc(sizeof(struct ID));
+    id->is_number = 1;
+    id->value = value;
+    return id;
 }
 
 int yyerror(char* fmt, ...) {

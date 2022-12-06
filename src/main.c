@@ -1,46 +1,25 @@
 #include <stdio.h>
-#include <stdlib.h>
-
-#include "digraph.h"
-
-const int INPUT_INDEX = 1;
-const int OUTPUT_INDEX = 2;
+#include "list.h"
 
 int main(int argc, char **argv) {
-    if (argc <= 1) {
-        fprintf(stderr, "You need to provide a .dot file in input\n");
-        exit(1);
+    struct LIST *list = build_empty_list();
+    
+    for (int i = 0; i < 10; i++) {
+        char *c = malloc(sizeof(c));
+        *c = i + 65;
+        push_back(list, (void *) c);
     }
 
-    FILE *input = fopen(argv[1], "r");
-    if (input == NULL) {
-        fprintf(stderr, "Couldn't find %s file\n", argv[INPUT_INDEX]);
-        exit(2);
+    L_NODE *item = list->first;
+    for (int i = 0; i < list->size; i++) {
+        char c = *(char *)item->value;
+        printf("Char: %c\n", c);
+        item = item->next;
     }
 
-    fseek(input, 0, SEEK_END);
-    long size = ftell(input);
-    rewind(input);
+    char *str = to_string(list);
 
-    char *raw = malloc(size * sizeof(char));
-    if (raw == NULL) {
-        fprintf(stderr, "Error while allocating memory for input file content\n");
-        exit(3);
-    }
-
-    for (int i = 0; i < size; i++) {
-        fscanf(input, "%c", &raw[i]);
-    }
-    raw[size - 1] = '\0';
-
-    printf("%s", raw);
-
-    struct DIGRAPH *graph = empty_digraph();
-    //unsigned short error = load(raw, graph);
-
-    fclose(input);
-    free(raw);
-    destroy_digraph(graph);
+    printf("str: %s\n", str);
 
     return 0;
 }

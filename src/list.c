@@ -1,5 +1,6 @@
 #include "list.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 struct LIST* build_empty_list() {
     struct LIST* list = malloc(sizeof(struct LIST));
@@ -23,12 +24,12 @@ void destroy_list(struct LIST *list) {
 void push_back(struct LIST *list, void *value) {
     if (list == NULL) { return; }
 
+    char item = *(char*) value;
     L_NODE *node = malloc(sizeof(L_NODE));
     node->value = value;
     node->next = NULL;
     if (list->size == 0) {
         list->first = list->last = node;
-        list->first->next = list->last;
         list->size = 1;
     } else {
         list->last->next = node;
@@ -56,6 +57,21 @@ void* pop_first(struct LIST *list) {
     list->first = list->first->next;
     list->size--;
     return value;
+}
+
+char* to_string(struct LIST *list) {
+    if (list == NULL) return "";
+
+    unsigned long len = length(list);
+    char *str = malloc(sizeof(char) * (len + 1));
+    for (int i = 0; i < len; i++) {
+        void *item = pop_first(list);
+        str[i] = *((char*) item);
+        push_back(list, item);
+    }
+    str[len] = '\0';
+
+    return str;
 }
 
 unsigned long length(struct LIST *list) {
