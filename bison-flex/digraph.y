@@ -4,6 +4,7 @@
     #include <stdarg.h>
     #include "../src/digraph.h"
     #include "../src/list.h"
+    #include "../src/map/map.h"
 
     extern FILE *yyin;
 
@@ -24,14 +25,15 @@
         struct ID *id;
         struct LIST *nodes;
         struct LIST *edges;
+        struct NODE *default_node;
+        struct EDGE *default_edge;
     };
     struct PARSE_ARGS *get(void *args);
 
-    struct NODE *default_node = NULL;
-    struct EDGE *default_edge = NULL;
-
     int yylex(void);
     void yyerror(void *args, const char *fmt, ...);
+
+    void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph);
 
     int line_count = 1;
 %}
@@ -106,9 +108,7 @@ attr_name:
 
 attr_stmt:
     NODE attr_list      {
-        if (default_node == NULL) {
-            default_node = empty_node();
-        }
+        struct NODE *default_node = get(args)->default_node;
 
         void *item = pop_first($2);
         while (item != NULL) {
@@ -121,9 +121,7 @@ attr_stmt:
         }
     }
     | EDGE attr_list {
-        if (default_edge == NULL) {
-            default_edge = empty_edge();
-        }
+        struct EDGE *default_edge = get(args)->default_edge;
 
         void *item = pop_first($2);
         while (item != NULL) {
@@ -152,7 +150,22 @@ a_list:
         push_back($$, (void *) pair);
     };
 
-node_stmt: node_id attr_list;  
+node_stmt: node_id attr_list {
+        struct NODE *node = empty_node();
+        node->id = $1;
+
+        void *item = pop_first($2);
+        while (item != NULL) {
+            struct ATTR_PAIR *pair = (struct ATTR_PAIR*) item;
+            if (set_node_attr(node, pair->attr_name, pair->attr_value)) {
+                yyerror(args, "\"%s\" isn't a valid attribute for a node", pair->attr_name);
+                YYABORT;
+            }
+            item = pop_first($2);
+        }
+
+        push_back(get(args)->nodes, node);
+    };  
 
 edge_stmt: node_id edge_rhs attr_list;
 
@@ -236,6 +249,14 @@ void yyerror(void *args, const char *fmt, ...) {
     va_end(ap);
 }
 
+void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
+    free(args->id);
+    destroy_list(args->nodes);
+    destroy_list(args->edges);
+    free(args);
+    destroy_digraph(graph);
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         fprintf(stderr, "You need to provide a file in input\n");
@@ -255,32 +276,36 @@ int main(int argc, char **argv) {
     #endif*/
 
     struct DIGRAPH *graph = empty_digraph();
-    struct LIST *nodes = build_empty_list();
-    struct LIST *edges = build_empty_list();
-
     struct PARSE_ARGS *args = malloc(sizeof(struct PARSE_ARGS));
     args->id = NULL;
-    args->nodes = nodes;
-    args->edges = edges;
+    args->nodes = build_empty_list();
+    args->edges = build_empty_list();
+    args->default_node = empty_node();
+    args->default_edge = empty_edge();
 
     int res = yyparse((void *) args);
+    fclose(input);
     
     if (res != 0) {
         fprintf(stderr, "Parsing failed\n");
-    } else {
-        if (args->id != NULL) {
-            graph->id = args->id->value;
-            printf("Successfully parsed a digraph with id: %s\n", graph->id);
-        } else {
-            printf("Well... the file was empty, so of course the parsing went well...\n");
-        }
+        clean(args, graph);
+        return res;
+    } else if (args->id == NULL) {
+        printf("Well... the file was empty, so of course the parsing went well...\n");
+        clean(args, graph);
+        return res;
     }
 
-    free(args->id);
-    free(args);
-    destroy_digraph(graph);
-    destroy_list(nodes);
-    destroy_list(edges);
-    fclose(input);
+    graph->id = args->id->value;
+    printf("Successfully parsed a digraph with id: %s\n", graph->id);
+    
+    void *item = pop_first(args->nodes);
+    while (item != NULL) {
+        struct NODE *node = (struct NODE *) item;
+        set_default_node_attr(node, args->default_node);
+        item = pop_first(args->nodes);
+    }
+
+    clean(args, graph);
     return res;
 }

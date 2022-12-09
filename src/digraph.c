@@ -86,8 +86,29 @@ short set_node_attr(struct NODE *node, char *attr_name, char *attr_value) {
     return 1;
 }
 
+void set_default_node_attr(struct NODE *node, struct NODE *default_node) {
+    if (node->font_name == NULL) {
+        node->font_name = default_node->font_name;
+    }
+    if (node->shape == NULL) {
+        node->shape = default_node->shape;
+    }
+    if (node->color_scheme == NULL) {
+        node->color_scheme = default_node->color_scheme;
+    }
+    if (node->label == NULL) {
+        node->label = default_node->label;
+    }
+    if (node->fill_color == NULL) {
+        node->fill_color = default_node->fill_color;
+    }
+    if (node->style == NULL) {
+        node->style = default_node->style;
+    }
+}
+
 short set_edge_attr(struct EDGE *edge, char *attr_name, char *attr_value) {
-if (strcmp(attr_name, FONT_NAME) == 0) {
+    if (strcmp(attr_name, FONT_NAME) == 0) {
         edge->font_name = attr_value;
         return 0;
     }
@@ -100,6 +121,18 @@ if (strcmp(attr_name, FONT_NAME) == 0) {
         return 0;
     }
     return 1;
+}
+
+void set_default_edge_attr(struct EDGE *edge, struct EDGE *default_edge) {
+    if (edge->font_name == NULL) {
+        edge->font_name = default_edge->font_name;
+    }
+    if (edge->label == NULL) {
+        edge->label = default_edge->label;
+    }
+    if (edge->style == NULL) {
+        edge->style = default_edge->style;
+    }
 }
 
 void destroy_digraph(struct DIGRAPH *graph) {

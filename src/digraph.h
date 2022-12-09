@@ -41,9 +41,17 @@ struct DIGRAPH* empty_digraph();
 /// If `attr_name` doesn't match any attribute, `1` is returned, `0` otherwise.
 short set_node_attr(struct NODE *node, char *attr_name, char *attr_value);
 
+/// Sets `node` `NULL` attributes to the corresponding valus in
+/// `default_node`.
+void set_default_node_attr(struct NODE *node, struct NODE *default_node);
+
 /// Sets the `EDGE` attribute corresponding to `attr_name` to `attr_value`.
 /// If `attr_name` doesn't match any attribute, `1` is returned, `0` otherwise.
 short set_edge_attr(struct EDGE *edge, char *attr_name, char *attr_value);
+
+/// Sets `edge` `NULL` attributes to the corresponding valus in
+/// `default_edge`.
+void set_default_edge_attr(struct EDGE *edge, struct EDGE *default_edge);
 
 /// Destroys `graph` and sets `graph` to `NULL`.
 void destroy_digraph(struct DIGRAPH *graph);
