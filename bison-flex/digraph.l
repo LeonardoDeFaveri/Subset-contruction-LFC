@@ -9,7 +9,8 @@
 	extern int line_count;
 
 	int yylex(void);
-	void yyerror(const char *fmt, ...);
+	//void yyerror(const char *fmt, ...);
+	void yyerror(void *args, const char *fmt, ...);
 
 	struct ID *new_id(char *value);
     struct ID *new_num(char *value);
@@ -71,7 +72,7 @@ void block_comment(void)
 		if (c == '/' && prev == '*') { return; }
 		prev = c;
 	}
-	yyerror("Unterminated block comment");
+	yyerror(NULL, "Unterminated block comment");
 }
 
 void inline_comment(void) {
@@ -83,7 +84,7 @@ void inline_comment(void) {
 			return;
 		}
 	}
-	yyerror("Unterminated inline comment");
+	yyerror(NULL, "Unterminated inline comment");
 }
 
 char *quoted_string() {
@@ -103,7 +104,7 @@ char *quoted_string() {
 		prev = c;
 	}
 
-	yyerror("Missing double-quote \" in string");
+	yyerror(NULL, "Missing double-quote \" in string");
 }
 
 char *copy(const char *s) {

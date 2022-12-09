@@ -20,11 +20,18 @@
     struct ID *new_id(char *value);
     struct ID *new_num(char *value);
 
+    struct PARSE_ARGS {
+        struct ID *id;
+        struct LIST *nodes;
+        struct LIST *edges;
+    };
+    struct PARSE_ARGS *get(void *args);
+
     struct NODE *default_node = NULL;
     struct EDGE *default_edge = NULL;
 
     int yylex(void);
-    void yyerror(const char *msg, ...);
+    void yyerror(void *args, const char *fmt, ...);
 
     int line_count = 1;
 %}
@@ -54,12 +61,14 @@
 
 %start graph
 
+%parse-param {void *args}
+
 %%
 
 graph:
-    %empty  { /*args->id = NULL;*/ }
+    %empty  { get(args)->id = NULL; }
     | DIGRAPH id LEFT_CURLY_BRAKET stmt_list RIGHT_CURLY_BRAKET  {
-        //args->id = $2->value;
+        get(args)->id = $2;
         YYACCEPT;
     };
 
@@ -92,20 +101,20 @@ stmt:
 
 attr_name:
     ID              { $$ = $1->value; }
-    | %empty        { yyerror("Missing attribute name\n"); YYABORT; }
+    | %empty        { yyerror(args, "Missing attribute name\n"); YYABORT; }
     ;
 
 attr_stmt:
     NODE attr_list      {
         if (default_node == NULL) {
             default_node = empty_node();
-        }yyerror(
+        }
 
         void *item = pop_first($2);
         while (item != NULL) {
             struct ATTR_PAIR *pair = (struct ATTR_PAIR*) item;
             if (set_node_attr(default_node, pair->attr_name, pair->attr_value)) {
-                yyerror("\"%s\" isn't a valid attribute for a node", pair->attr_name);
+                yyerror(args, "\"%s\" isn't a valid attribute for a node", pair->attr_name);
                 YYABORT;
             }
             item = pop_first($2);
@@ -120,7 +129,7 @@ attr_stmt:
         while (item != NULL) {
             struct ATTR_PAIR *pair = (struct ATTR_PAIR*) item;
             if (set_edge_attr(default_edge, pair->attr_name, pair->attr_value)) {
-                yyerror("\"%s\" isn't a valid attribute for an edge", pair->attr_name);
+                yyerror(args, "\"%s\" isn't a valid attribute for an edge", pair->attr_name);
                 YYABORT;
             }
             item = pop_first($2);
@@ -151,7 +160,7 @@ node_id: ID {
         if ($1->is_number) {
             $$ = atoi($1->value);
         } else {
-            yyerror("\"%s\" isn't a valid id for a node. It must be an integer value", $1->value);
+            yyerror(args, "\"%s\" isn't a valid id for a node. It must be an integer value", $1->value);
             YYABORT;
         }
     };
@@ -178,6 +187,7 @@ struct ID *new_id(char *value) {
     id->value = value;
     return id;
 }
+
 struct ID *new_num(char *value) {
     struct ID *id = malloc(sizeof(struct ID));
     id->is_number = 1;
@@ -185,7 +195,12 @@ struct ID *new_num(char *value) {
     return id;
 }
 
-void yyerror(const char *fmt, ...) {
+struct PARSE_ARGS *get(void *args) {
+    return (struct PARSE_ARGS *) args;
+}
+
+//void yyerror(const char *fmt, ...) {
+void yyerror(void *args, const char *fmt, ...) {
     fprintf(stderr, "Error on line %d: ", line_count);
 
     va_list ap;
@@ -243,18 +258,26 @@ int main(int argc, char **argv) {
     struct LIST *nodes = build_empty_list();
     struct LIST *edges = build_empty_list();
 
-    int res = yyparse();
+    struct PARSE_ARGS *args = malloc(sizeof(struct PARSE_ARGS));
+    args->id = NULL;
+    args->nodes = nodes;
+    args->edges = edges;
+
+    int res = yyparse((void *) args);
     
     if (res != 0) {
         fprintf(stderr, "Parsing failed\n");
     } else {
-        if (graph->id != NULL) {
+        if (args->id != NULL) {
+            graph->id = args->id->value;
             printf("Successfully parsed a digraph with id: %s\n", graph->id);
         } else {
             printf("Well... the file was empty, so of course the parsing went well...\n");
         }
     }
 
+    free(args->id);
+    free(args);
     destroy_digraph(graph);
     destroy_list(nodes);
     destroy_list(edges);
