@@ -2,7 +2,8 @@
 #define DIGRAPH_H
 
 struct NODE {
-    int id;
+    char *id;
+
     char *font_name;
     char *shape;
     char *color_scheme;
@@ -12,8 +13,10 @@ struct NODE {
 };
 
 struct EDGE {
-    struct NODE *from;
-    struct NODE *to;
+    /// Identifier of the originating node
+    char *from;
+    /// Identifier of the destination node
+    char *to;
     char *font_name;
     char *label;
     char *style;

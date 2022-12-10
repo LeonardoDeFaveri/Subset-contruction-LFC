@@ -51,7 +51,7 @@
 
 %union {
     struct ID *id;
-    int id_val;
+    char *id_val;
     char *attr_name;
     struct LIST *attr_list;
 }
@@ -170,12 +170,11 @@ node_stmt: node_id attr_list {
 edge_stmt: node_id edge_rhs attr_list;
 
 node_id: ID {
-        if ($1->is_number) {
-            $$ = atoi($1->value);
-        } else {
-            yyerror(args, "\"%s\" isn't a valid id for a node. It must be an integer value", $1->value);
+        if ($1->value == "") {
+            yyerror(args, "Empty string can't be used as node id");
             YYABORT;
         }
+        $$ = $1->value;
     };
 
 edge_rhs: EDGE_OP node_id optional_edge_rhs;
