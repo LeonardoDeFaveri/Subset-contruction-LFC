@@ -54,12 +54,14 @@
     char *id_val;
     char *attr_name;
     struct LIST *attr_list;
+    struct LIST *edges;
 }
 
 %type <id> id
 %type <attr_name> attr_name
 %type <attr_list> attr_list a_list
 %type <id_val> node_id
+%type <edges> edge_rhs optional_edge_rhs
 
 %start graph
 
@@ -164,10 +166,29 @@ node_stmt: node_id attr_list {
             item = pop_first($2);
         }
 
-        push_back(get(args)->nodes, node);
+        push_back(get(args)->nodes, (void *) node);
     };  
 
-edge_stmt: node_id edge_rhs attr_list;
+edge_stmt: node_id edge_rhs attr_list {
+        struct PARSE_ARGS *p_args = get(args);
+
+        struct EDGE *edge_attr = empty_edge();
+        void *attr = pop_first($3);
+        while (attr != NULL) {
+            struct ATTR_PAIR *attr_pair = (struct ATTR_PAIR *)attr;
+            set_edge_attr(edge_attr, attr_pair->attr_name, attr_pair->attr_value);
+            attr = pop_first($3);
+        } 
+
+        void *item = pop_first($2);
+        while (item != NULL) {
+            struct EDGE *edge = (struct EDGE *) item;
+            edge->from = $1;
+            set_default_edge_attr(edge, edge_attr);
+            push_back(p_args->edges, (void *) edge);
+            item = pop_first($2);
+        }
+    };
 
 node_id: ID {
         if ($1->value == "") {
@@ -177,11 +198,16 @@ node_id: ID {
         $$ = $1->value;
     };
 
-edge_rhs: EDGE_OP node_id optional_edge_rhs;
+edge_rhs: EDGE_OP node_id optional_edge_rhs {
+        $$ = $3;
+        struct EDGE *edge = empty_edge();
+        edge->to = $2;
+        push_back($$, (void *) edge);
+    };
 
 optional_edge_rhs:
-    %empty
-    | edge_rhs
+    %empty          { $$ = build_empty_list(); }
+    | edge_rhs      { $$ = $1; }
     ;
 
 %%
@@ -211,7 +237,6 @@ struct PARSE_ARGS *get(void *args) {
     return (struct PARSE_ARGS *) args;
 }
 
-//void yyerror(const char *fmt, ...) {
 void yyerror(void *args, const char *fmt, ...) {
     fprintf(stderr, "Error on line %d: ", line_count);
 
@@ -254,6 +279,18 @@ void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
     destroy_list(args->edges);
     free(args);
     destroy_digraph(graph);
+}
+
+void print_node(void* key, size_t ksize, uintptr_t value, void* usr) {
+    struct NODE *node = (struct NODE *) value;
+    printf("Node[%s] {\n", node->id);
+    printf("\t label: %s\n", node->label);
+    printf("\t shape: %s\n", node->shape);
+    printf("\t style: %s\n", node->style);
+    printf("\t fill_color: %s\n", node->fill_color);
+    printf("\t font_name: %s\n", node->font_name);
+    printf("\t color_scheme: %s\n", node->color_scheme);
+    printf("}\n");
 }
 
 int main(int argc, char **argv) {
@@ -303,7 +340,11 @@ int main(int argc, char **argv) {
         struct NODE *node = (struct NODE *) item;
         set_default_node_attr(node, args->default_node);
         item = pop_first(args->nodes);
+
+        add_node(graph, node);
     }
+
+    hashmap_iterate(graph->nodes, print_node, NULL);
 
     clean(args, graph);
     return res;

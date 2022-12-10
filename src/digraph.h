@@ -1,6 +1,7 @@
 #ifndef DIGRAPH_H
 #define DIGRAPH_H
 
+#include "map/map.h"
 struct NODE {
     char *id;
 
@@ -25,7 +26,7 @@ struct EDGE {
 struct DIGRAPH {
     char *id;
     /// State `0` should be in `nodes[0]`.
-    struct NODE *nodes;
+    hashmap *nodes;
     /// `edges[0]` holds every edge from state `0` to other states.
     struct EDGE **edges;
     /// Maximum number of nodes that can be stored.
@@ -59,12 +60,9 @@ void set_default_edge_attr(struct EDGE *edge, struct EDGE *default_edge);
 /// Destroys `graph` and sets `graph` to `NULL`.
 void destroy_digraph(struct DIGRAPH *graph);
 
-/// Constructs a `digraph` from `raw`: a string holding a `.dot` representation of
-// it. Returns a number grater than `0` if something went wrong, `0` otherwise.
-unsigned short load(char *raw, struct DIGRAPH *graph);
-
-/// Constructs a `.dot` representation of `graph`. Returns a number greater than `0`
-/// if something went wrong, `0` otherwise.
-unsigned short save(char *raw, struct DIGRAPH *graph);
+/// Retrieves the node with id `id` from the graph.
+struct NODE *get_node(struct DIGRAPH *graph, char *id);
+/// Add `node` to the graph.
+void add_node(struct DIGRAPH *graph, struct NODE *node);
 
 #endif

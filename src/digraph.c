@@ -1,5 +1,7 @@
 #include "digraph.h"
 #include "list.h"
+#include "map/map.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -48,7 +50,7 @@ struct EDGE* empty_edge() {
 struct DIGRAPH* empty_digraph() {
     struct DIGRAPH *graph = malloc(sizeof(struct DIGRAPH));
 
-    graph->nodes = NULL;
+    graph->nodes = hashmap_create();
     graph->edges = NULL;
     graph->edges_count = NULL;
 
@@ -146,4 +148,23 @@ void destroy_digraph(struct DIGRAPH *graph) {
     if (graph->edges_count != NULL) { free(graph->edges_count); }
     free(graph);
     graph = NULL;
+}
+
+struct NODE *get_node(struct DIGRAPH *graph, char *id) {
+    uintptr_t result;
+    if (hashmap_get_set(graph->nodes, id, strlen(id), &result)) {
+        return (struct NODE *)result;
+    } else {
+        return NULL;
+    }
+}
+
+void add_node(struct DIGRAPH *graph, struct NODE *node) {
+    struct NODE *old_node = get_node(graph, node->id);
+    if (old_node != NULL) {
+        set_default_node_attr(old_node, node);
+    } else {
+        uintptr_t ptr = (uintptr_t) node;
+        hashmap_set(graph->nodes, node->id, strlen(node->id), ptr);
+    }
 }
