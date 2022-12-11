@@ -281,6 +281,21 @@ void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
     destroy_digraph(graph);
 }
 
+void print_edge(void* key, size_t ksize, uintptr_t value, void* usr) {
+    struct LIST *edges = (struct LIST *) value;
+    
+    struct L_NODE *node = edges->first;
+    while (node != NULL) {
+        struct EDGE *edge = (struct EDGE *) node->value;
+        printf("Edge(%s->%s) {\n", edge->from, edge->to);
+        printf("\t label: %s\n", edge->label);
+        printf("\t style: %s\n", edge->style);
+        printf("\t font_name: %s\n", edge->font_name);
+        printf("}\n");
+        node = node->next;
+    }
+}
+
 void print_node(void* key, size_t ksize, uintptr_t value, void* usr) {
     struct NODE *node = (struct NODE *) value;
     printf("Node[%s] {\n", node->id);
@@ -345,6 +360,29 @@ int main(int argc, char **argv) {
     }
 
     hashmap_iterate(graph->nodes, print_node, NULL);
+
+    short error = 0;
+    item = pop_first(args->edges);
+    while (item != NULL) {
+        struct EDGE *edge = (struct EDGE *) item;
+        set_default_edge_attr(edge, args->default_edge);
+        item = pop_first(args->edges);
+
+        if (get_node(graph, edge->from) != NULL) {
+            add_edge(graph, edge);
+        } else {
+            fprintf(stderr, "Error on edge (%s->%s): ", edge->from, edge->to);
+            fprintf(stderr, "there's no node with id=\"%s\"\n", edge->from);
+            error = 1;
+        }
+    }
+
+    if (error) {
+        clean(args, graph);
+        exit(1);
+    }
+
+    hashmap_iterate(graph->edges, print_edge, NULL);
 
     clean(args, graph);
     return res;

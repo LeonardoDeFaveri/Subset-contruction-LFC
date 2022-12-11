@@ -40,6 +40,7 @@ struct NODE* empty_node() {
 
 struct EDGE* empty_edge() {
     struct EDGE *empty = malloc(sizeof(struct EDGE));
+    empty->from = NULL;
     empty->to = NULL;
     empty->label = NULL;
     empty->font_name = NULL;
@@ -51,10 +52,8 @@ struct DIGRAPH* empty_digraph() {
     struct DIGRAPH *graph = malloc(sizeof(struct DIGRAPH));
 
     graph->nodes = hashmap_create();
-    graph->edges = NULL;
-    graph->edges_count = NULL;
+    graph->edges = hashmap_create();
 
-    graph->nodes_count = 0;
     graph->nodes_inserted = 0;
 
     return graph;
@@ -137,34 +136,90 @@ void set_default_edge_attr(struct EDGE *edge, struct EDGE *default_edge) {
     }
 }
 
+void destroy_node(struct NODE *node) {
+    if (node == NULL) { return; }
+
+    if (node->id != NULL) { free(node->id); }
+    //if (node->label != NULL) { free(node->label); }
+    //if (node->shape != NULL) { free(node->shape); }
+    //if (node->style != NULL) { free(node->style); }
+    //if (node->fill_color != NULL) { free(node->fill_color); }
+    //if (node->font_name != NULL) { free(node->font_name); }
+    //if (node->color_scheme != NULL) { free(node->color_scheme); }
+    free(node);
+}
+
+void destroy_edge(struct EDGE *edge) {
+    if (edge == NULL) { return; }
+
+    //if (edge->label != NULL) { free(edge->label); }
+    //if (edge->style != NULL) { free(edge->style); }
+    //if (edge->font_name != NULL) { free(edge->font_name); }
+    free(edge);
+}
+
+void destroy_node_aux(void* key, size_t ksize, uintptr_t value, void* usr) {
+    if (usr == NULL) { return; }
+
+    void (*destroyer)(struct NODE *) = usr;
+    destroyer((struct NODE *) value);
+}
+
+void destroy_edge_aux(void* key, size_t ksize, uintptr_t value, void* usr) {
+    if (usr == NULL) { return; }
+
+    void (*destroyer)(struct EDGE *) = usr;
+    destroyer((struct EDGE *) value);
+}
+
 void destroy_digraph(struct DIGRAPH *graph) {
     if (graph == NULL) { return; }
 
-    if (graph->nodes != NULL) { free(graph->nodes); }
-    for (int i = 0; i < graph->nodes_count; i++) {
-        if (graph->edges[i] != NULL) { free(graph->edges[i]); }
+    if (graph->nodes != NULL) {
+        hashmap_iterate(graph->nodes, destroy_node_aux, (void *) destroy_node);
+        hashmap_free(graph->nodes);
     }
-    if (graph->edges) { free(graph->edges); }
-    if (graph->edges_count != NULL) { free(graph->edges_count); }
+    if (graph->edges != NULL) {
+        hashmap_iterate(graph->edges, destroy_edge_aux, (void *) destroy_edge);
+        hashmap_free(graph->edges);
+    }
     free(graph);
-    graph = NULL;
 }
 
 struct NODE *get_node(struct DIGRAPH *graph, char *id) {
     uintptr_t result;
     if (hashmap_get_set(graph->nodes, id, strlen(id), &result)) {
-        return (struct NODE *)result;
-    } else {
-        return NULL;
+        return (struct NODE *) result;
     }
+    return NULL;
 }
 
 void add_node(struct DIGRAPH *graph, struct NODE *node) {
-    struct NODE *old_node = get_node(graph, node->id);
-    if (old_node != NULL) {
-        set_default_node_attr(old_node, node);
+    struct NODE *other_node = get_node(graph, node->id);
+    if (other_node != NULL) {
+        set_default_node_attr(other_node, node);
     } else {
         uintptr_t ptr = (uintptr_t) node;
         hashmap_set(graph->nodes, node->id, strlen(node->id), ptr);
+    }
+}
+
+struct LIST *get_outgoing_from(struct DIGRAPH *graph, char *source) {
+    uintptr_t result;
+    if (hashmap_get_set(graph->edges, source, strlen(source), &result)) {
+        return (struct LIST *) result;
+    }
+    return NULL;
+}
+
+void add_edge(struct DIGRAPH *graph, struct EDGE *edge) {
+    struct LIST *other_edges = get_outgoing_from(graph, edge->from);
+    if (other_edges != NULL) {
+        push_back(other_edges, (void *) edge);
+    } else {
+        other_edges = build_empty_list();
+        push_back(other_edges, edge);
+        uintptr_t ptr = (uintptr_t) other_edges;
+        hashmap_set(graph->edges, edge->from, strlen(edge->from), ptr);
     }
 }

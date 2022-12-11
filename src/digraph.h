@@ -25,16 +25,10 @@ struct EDGE {
 
 struct DIGRAPH {
     char *id;
-    /// State `0` should be in `nodes[0]`.
     hashmap *nodes;
-    /// `edges[0]` holds every edge from state `0` to other states.
-    struct EDGE **edges;
-    /// Maximum number of nodes that can be stored.
-    int nodes_count;
+    hashmap *edges;
     /// Number of nodes currently stored.
     int nodes_inserted;
-    // `edges_count[0]` tell how many edges goes out of state `0`.
-    long *edges_count;
 };
 
 struct NODE* empty_node();
@@ -57,12 +51,25 @@ short set_edge_attr(struct EDGE *edge, char *attr_name, char *attr_value);
 /// `default_edge`.
 void set_default_edge_attr(struct EDGE *edge, struct EDGE *default_edge);
 
-/// Destroys `graph` and sets `graph` to `NULL`.
+/// Destroys `node` and all its attributes.
+void destroy_node(struct NODE *node);
+/// Destroy `edge` attributes. `edge->from` and `edge->to` aren't touched
+/// because they might be invalid pointers.
+void destroy_edge(struct EDGE *edge);
+/// Destroys `graph` and all its nodes and edges.
 void destroy_digraph(struct DIGRAPH *graph);
 
 /// Retrieves the node with id `id` from the graph.
+/// Returns `NULL` if there's no such node.
 struct NODE *get_node(struct DIGRAPH *graph, char *id);
 /// Add `node` to the graph.
 void add_node(struct DIGRAPH *graph, struct NODE *node);
+
+/// Returns a list of the edges that come out for node `source`.
+/// Return `NULL` if there's no such edge.
+struct LIST *get_outgoing_from(struct DIGRAPH *graph, char *source);
+
+/// Adds `edge` to the list of edges coming out of `edge->from`.
+void add_edge(struct DIGRAPH *graph, struct EDGE *edge);
 
 #endif
