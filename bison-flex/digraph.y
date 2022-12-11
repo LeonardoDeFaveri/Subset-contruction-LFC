@@ -33,6 +33,7 @@
     int yylex(void);
     void yyerror(void *args, const char *fmt, ...);
 
+    short strcmpi(const char *s1, const char *s2);
     void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph);
 
     int line_count = 1;
@@ -273,6 +274,21 @@ void yyerror(void *args, const char *fmt, ...) {
     va_end(ap);
 }
 
+short streqi(const char *s1, const char *s2) {
+    if (s1 == NULL || s2 == NULL) { return 0; }
+
+    while (*s1 != '\0' && *s2 != '\0') {
+        if (*s1 == *s2 || *s1 + 32 == *s2 || *s1 - 32 == *s2) {
+            s1++;
+            s2++;
+        } else {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
     free(args->id);
     destroy_list(args->nodes);
@@ -356,10 +372,19 @@ int main(int argc, char **argv) {
         set_default_node_attr(node, args->default_node);
         item = pop_first(args->nodes);
 
+        if (streqi(node->shape, "doublecircle") == 0) {
+            if (graph->starting_node == NULL) {
+                graph->starting_node = node->id;
+            } else {
+                fprintf(stderr, "Non unique starting node\n");
+                fprintf(stderr, "Identified two candidate nodes: %s and %s\n", graph->starting_node, node->id);
+                clean(args, graph);
+                exit(1);
+            }
+        }
+
         add_node(graph, node);
     }
-
-    hashmap_iterate(graph->nodes, print_node, NULL);
 
     short error = 0;
     item = pop_first(args->edges);
@@ -381,8 +406,6 @@ int main(int argc, char **argv) {
         clean(args, graph);
         exit(1);
     }
-
-    hashmap_iterate(graph->edges, print_edge, NULL);
 
     clean(args, graph);
     return res;

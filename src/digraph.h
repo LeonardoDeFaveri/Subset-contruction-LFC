@@ -25,6 +25,7 @@ struct EDGE {
 
 struct DIGRAPH {
     char *id;
+    char *starting_node;
     hashmap *nodes;
     hashmap *edges;
     /// Number of nodes currently stored.

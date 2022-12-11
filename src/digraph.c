@@ -50,7 +50,8 @@ struct EDGE* empty_edge() {
 
 struct DIGRAPH* empty_digraph() {
     struct DIGRAPH *graph = malloc(sizeof(struct DIGRAPH));
-
+    graph->id = NULL;
+    graph->starting_node = NULL;
     graph->nodes = hashmap_create();
     graph->edges = hashmap_create();
 
