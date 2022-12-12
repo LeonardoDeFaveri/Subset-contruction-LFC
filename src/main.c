@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "list.h"
+#include "list/list.h"
 
 int main(int argc, char **argv) {
     struct LIST *list = build_empty_list();

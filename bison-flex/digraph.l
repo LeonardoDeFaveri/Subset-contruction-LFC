@@ -4,7 +4,7 @@
 	#include <string.h>
     #include "digraph.tab.h"
 	#include "../src/digraph.h"
-    #include "../src/list.h"
+    #include "../src/list/list.h"
 
 	extern int line_count;
 

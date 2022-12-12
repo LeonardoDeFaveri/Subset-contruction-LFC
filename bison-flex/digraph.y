@@ -3,7 +3,7 @@
     #include <stdlib.h>
     #include <stdarg.h>
     #include "../src/digraph.h"
-    #include "../src/list.h"
+    #include "../src/list/list.h"
     #include "../src/map/map.h"
 
     extern FILE *yyin;

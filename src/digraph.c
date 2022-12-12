@@ -1,5 +1,5 @@
 #include "digraph.h"
-#include "list.h"
+#include "list/list.h"
 #include "map/map.h"
 #include <stdint.h>
 #include <stdlib.h>
