@@ -1,10 +1,5 @@
-.SILENT: parser target debug
-
-target:
-	gcc src/main.c src/digraph.c src/list.c -o ssc
-
-debug:
-	gcc src/main.c src/digraph.c src/list.c -g -o ssc
+.SILENT: parser
+.PHONY: parser
 
 parser: bison-flex/digraph.l bison-flex/digraph.y
 	flex -o bison-flex/lex.yy.c bison-flex/digraph.l
