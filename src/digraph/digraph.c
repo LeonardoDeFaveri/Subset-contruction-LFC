@@ -1,9 +1,9 @@
-#include "digraph.h"
-#include "list/list.h"
-#include "map/map.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "digraph.h"
+#include "../list/list.h"
+#include "../map/map.h"
 
 // List of attributes:
 const char *FONT_NAME = "fontname";         // 0

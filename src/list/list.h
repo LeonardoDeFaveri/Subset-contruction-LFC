@@ -1,8 +1,8 @@
 #ifndef LIST_H
 #define LIST_H
 
-#include "../digraph.h"
 #include <stdlib.h>
+#include "../digraph/digraph.h"
 
 struct L_NODE {
     void *value;

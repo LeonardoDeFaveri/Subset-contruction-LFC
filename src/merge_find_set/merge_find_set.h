@@ -1,5 +1,5 @@
-#ifndef MERGE_FIND_SET
-#define MERGE_FIND_SET
+#ifndef MERGE_FIND_SET_H
+#define MERGE_FIND_SET_H
 
 #include "../map/map.h"
 #include "../list/list.h"

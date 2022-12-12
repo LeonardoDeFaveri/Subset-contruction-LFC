@@ -4,8 +4,8 @@
 //  Created by Mashpoe on 1/15/21.
 //
 
-#ifndef map_h
-#define map_h
+#ifndef MAP_H
+#define MAP_H
 
 #define hashmap_str_lit(str) (str), sizeof(str) - 1
 #define hashmap_static_arr(arr) (arr), sizeof(arr)

@@ -1,7 +1,8 @@
 #ifndef DIGRAPH_H
 #define DIGRAPH_H
 
-#include "map/map.h"
+#include "../map/map.h"
+
 struct NODE {
     char *id;
 

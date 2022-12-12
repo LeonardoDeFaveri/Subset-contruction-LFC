@@ -2,9 +2,11 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <stdarg.h>
-    #include "../src/digraph.h"
+    #include "../src/program.h"
+    #include "../src/digraph/digraph.h"
     #include "../src/list/list.h"
     #include "../src/map/map.h"
+    #include "../src/merge_find_set/merge_find_set.h"
 
     extern FILE *yyin;
 
@@ -21,20 +23,8 @@
     struct ID *new_id(char *value);
     struct ID *new_num(char *value);
 
-    struct PARSE_ARGS {
-        struct ID *id;
-        struct LIST *nodes;
-        struct LIST *edges;
-        struct NODE *default_node;
-        struct EDGE *default_edge;
-    };
-    struct PARSE_ARGS *get(void *args);
-
     int yylex(void);
     void yyerror(void *args, const char *fmt, ...);
-
-    short strcmpi(const char *s1, const char *s2);
-    void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph);
 
     int line_count = 1;
 %}
@@ -234,10 +224,6 @@ struct ID *new_num(char *value) {
     return id;
 }
 
-struct PARSE_ARGS *get(void *args) {
-    return (struct PARSE_ARGS *) args;
-}
-
 void yyerror(void *args, const char *fmt, ...) {
     fprintf(stderr, "Error on line %d: ", line_count);
 
@@ -272,29 +258,6 @@ void yyerror(void *args, const char *fmt, ...) {
     }
 
     va_end(ap);
-}
-
-short streqi(const char *s1, const char *s2) {
-    if (s1 == NULL || s2 == NULL) { return 0; }
-
-    while (*s1 != '\0' && *s2 != '\0') {
-        if (*s1 == *s2 || *s1 + 32 == *s2 || *s1 - 32 == *s2) {
-            s1++;
-            s2++;
-        } else {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
-    free(args->id);
-    destroy_list(args->nodes);
-    destroy_list(args->edges);
-    free(args);
-    destroy_digraph(graph);
 }
 
 void print_edge(void* key, size_t ksize, uintptr_t value, void* usr) {
@@ -343,12 +306,7 @@ int main(int argc, char **argv) {
     #endif*/
 
     struct DIGRAPH *graph = empty_digraph();
-    struct PARSE_ARGS *args = malloc(sizeof(struct PARSE_ARGS));
-    args->id = NULL;
-    args->nodes = build_empty_list();
-    args->edges = build_empty_list();
-    args->default_node = empty_node();
-    args->default_edge = empty_edge();
+    struct PARSE_ARGS *args = empty_args();
 
     int res = yyparse((void *) args);
     fclose(input);
@@ -366,6 +324,9 @@ int main(int argc, char **argv) {
     graph->id = args->id->value;
     printf("Successfully parsed a digraph with id: %s\n", graph->id);
     
+    // Merge-find-set used to
+    struct MFS *mfs = make_mfs();
+
     void *item = pop_first(args->nodes);
     while (item != NULL) {
         struct NODE *node = (struct NODE *) item;
