@@ -30,8 +30,7 @@ struct DIGRAPH {
     char *starting_node;
     hashmap *nodes;
     hashmap *edges;
-    /// Number of nodes currently stored.
-    int nodes_inserted;
+    hashmap *symbols;
 };
 
 struct NODE* empty_node();

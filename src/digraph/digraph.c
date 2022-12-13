@@ -56,9 +56,7 @@ struct DIGRAPH* empty_digraph() {
     graph->starting_node = NULL;
     graph->nodes = hashmap_create();
     graph->edges = hashmap_create();
-
-    graph->nodes_inserted = 0;
-
+    graph->symbols = hashmap_create();
     return graph;
 }
 
@@ -191,7 +189,7 @@ void destroy_digraph(struct DIGRAPH *graph) {
 
 struct NODE *get_node(struct DIGRAPH *graph, char *id) {
     uintptr_t result;
-    if (hashmap_get_set(graph->nodes, id, strlen(id), &result)) {
+    if (hashmap_get(graph->nodes, id, strlen(id), &result)) {
         return (struct NODE *) result;
     }
     return NULL;
