@@ -11,4 +11,3 @@ parser: bison-flex/digraph.l bison-flex/digraph.y
 	rm bison-flex/lex.yy.c
 	rm bison-flex/digraph.tab.h
 	rm bison-flex/digraph.tab.c
-	

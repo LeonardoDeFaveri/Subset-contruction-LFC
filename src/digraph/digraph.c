@@ -29,6 +29,8 @@ short is_digit(char c) {
 
 struct NODE* empty_node() {
     struct NODE *empty = malloc(sizeof(struct NODE));
+    empty->id = NULL;
+    empty->is_final = 0;
     empty->color_scheme = NULL;
     empty->fill_color = NULL;
     empty->font_name = NULL;

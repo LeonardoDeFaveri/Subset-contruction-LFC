@@ -5,6 +5,7 @@
 
 struct NODE {
     char *id;
+    short is_final;
 
     char *font_name;
     char *shape;

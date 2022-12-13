@@ -24,7 +24,7 @@ struct PARSE_ARGS *get(void *args) {
 }
 
 int streqi(const char *s1, const char *s2) {
-    if (s1 == NULL || s2 == NULL) { return 0; }
+    if (s1 == NULL || s2 == NULL) { return 1; }
 
     while (*s1 != '\0' && *s2 != '\0') {
         if (*s1 == *s2 || *s1 + 32 == *s2 || *s1 - 32 == *s2) {
@@ -81,17 +81,18 @@ int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
         item = pop_first(args->nodes);
 
         if (streqi(node->shape, "doublecircle") == 0) {
-            if (graph->starting_node == NULL) {
-                graph->starting_node = node->id;
-            } else {
-                fprintf(stderr, "Non unique starting node\n");
-                fprintf(stderr, "Identified two candidate nodes: %s and %s\n", graph->starting_node, node->id);
-                return 1;
-            }
+            node->is_final = 1;
         }
 
         add_node(graph, node);
     }
+
+    struct NODE *starting_node = get_node(graph, "0");
+    if (starting_node == NULL) {
+        fprintf(stderr, "No starting node. You must add a node with id=0\n");
+        return 1;
+    }
+    graph->starting_node = starting_node->id;
 
     short error = 0;
     item = pop_first(args->edges);
@@ -132,6 +133,8 @@ void prepare_mfs(void *key, size_t ksize, uintptr_t value, void *usr) {
     hashmap_set(nodes, key, ksize, (uintptr_t) mfs_item);
 }
 
+
+
 struct DIGRAPH *minimize(struct DIGRAPH *graph) {
     hashmap *mfs_nodes = hashmap_create();
     struct MFS *initial = make_mfs();
@@ -142,7 +145,7 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
     void **data = malloc(sizeof(void *) * 2);
     data[0] = (void *) mfs_nodes;
     data[1] = (void *) initial;
-    hashmap_iterate(graph->nodes, prepare_mfs, (void *) mfs_nodes);
+    hashmap_iterate(graph->nodes, prepare_mfs, (void *) data);
     free(data);
     //*************************************************************************
 

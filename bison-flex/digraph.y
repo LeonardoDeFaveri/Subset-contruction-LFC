@@ -295,8 +295,6 @@ int main(int argc, char **argv) {
     }
 
     graph->id = args->id->value;
-    printf("Successfully parsed a digraph with id: %s\n", graph->id);
-
     res = program(args, graph);
 
     clean(args, graph);
