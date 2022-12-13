@@ -2,6 +2,9 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <stdarg.h>
+    #include <string.h>
+    #include <stddef.h>
+
     #include "../src/program.h"
     #include "../src/digraph/digraph.h"
     #include "../src/list/list.h"
@@ -169,7 +172,10 @@ edge_stmt: node_id edge_rhs attr_list {
             struct ATTR_PAIR *attr_pair = (struct ATTR_PAIR *)attr;
             set_edge_attr(edge_attr, attr_pair->attr_name, attr_pair->attr_value);
             attr = pop_first($3);
-        } 
+        }
+        // Register transition symbols. Symbols are case-sensitive
+        hashmap *symbols = p_args->symbols;
+        hashmap_set(symbols, edge_attr->label, strlen(edge_attr->label), (uintptr_t) edge_attr->label);
 
         void *item = pop_first($2);
         while (item != NULL) {
@@ -295,6 +301,7 @@ int main(int argc, char **argv) {
     }
 
     graph->id = args->id->value;
+    graph->symbols = args->symbols;
     res = program(args, graph);
 
     clean(args, graph);

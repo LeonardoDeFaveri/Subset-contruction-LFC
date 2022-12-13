@@ -12,6 +12,7 @@ struct PARSE_ARGS {
     struct LIST *edges;
     struct NODE *default_node;
     struct EDGE *default_edge;
+    hashmap *symbols;
 };
 
 struct PARSE_ARGS *empty_args();

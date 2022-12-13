@@ -19,6 +19,7 @@ struct PARSE_ARGS *empty_args() {
     args->edges = build_empty_list();
     args->default_node = empty_node();
     args->default_edge = empty_edge();
+    args->symbols = hashmap_create();
     return args;
 }
 
@@ -74,6 +75,11 @@ void print_node(void* key, size_t ksize, uintptr_t value, void* usr) {
     printf("\t font_name: %s\n", node->font_name);
     printf("\t color_scheme: %s\n", node->color_scheme);
     printf("}\n");
+}
+
+void print_sym(void* key, size_t ksize, uintptr_t value, void* usr) {
+    char *symbol = (char *) value;
+    printf("%s\n", symbol);
 }
 
 int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
