@@ -1,6 +1,10 @@
+#include <stdint.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "map/map.h"
+#include "merge_find_set/merge_find_set.h"
 #include "program.h"
 #include "list/list.h"
 #include "digraph/digraph.h"
@@ -69,10 +73,7 @@ void print_node(void* key, size_t ksize, uintptr_t value, void* usr) {
     printf("}\n");
 }
 
-int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {    
-    // Merge-find-set used to
-    struct MFS *mfs = make_mfs();
-
+int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
     void *item = pop_first(args->nodes);
     while (item != NULL) {
         struct NODE *node = (struct NODE *) item;
@@ -112,5 +113,38 @@ int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
         return error;
     }
 
+    struct DIGRAPH *minimized_graph = minimize(graph);
+
     return 0;
+}
+
+/// `usr` must be an array of `void` in which `usr[0]` is a `hashmap *` and
+/// `usr[1]` a `struct MFS *`. Populates `usr[0]` with instances of
+/// `struct MFS_ITEM` and creates a set in `usr[1]` for each `value`.
+void prepare_mfs(void *key, size_t ksize, uintptr_t value, void *usr) {
+    if (usr == NULL) { return; }
+
+    void **data = (void **) usr;
+    hashmap *nodes = (hashmap *) data[0];
+    struct MFS *mfs = (struct MFS *) data[1];
+
+    void *mfs_item = (void *) make_set(mfs, (void *) value);
+    hashmap_set(nodes, key, ksize, (uintptr_t) mfs_item);
+}
+
+struct DIGRAPH *minimize(struct DIGRAPH *graph) {
+    hashmap *mfs_nodes = hashmap_create();
+    struct MFS *initial = make_mfs();
+
+    //*************************************************************************
+    // Initializes a support hashmap that maps node ids to their representation
+    // as `struct MFS_ITEM`.
+    void **data = malloc(sizeof(void *) * 2);
+    data[0] = (void *) mfs_nodes;
+    data[1] = (void *) initial;
+    hashmap_iterate(graph->nodes, prepare_mfs, (void *) mfs_nodes);
+    free(data);
+    //*************************************************************************
+
+    return NULL;
 }

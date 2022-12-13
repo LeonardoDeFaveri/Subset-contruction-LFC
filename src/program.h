@@ -22,4 +22,6 @@ void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph);
 
 int program(struct PARSE_ARGS *args, struct DIGRAPH *graph);
 
+struct DIGRAPH *minimize(struct DIGRAPH *graph);
+
 #endif
