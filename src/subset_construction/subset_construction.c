@@ -36,6 +36,8 @@ void mark_state(hashmap *states, struct STATE *state) {
 }
 
 struct NODE *node_from_state(struct STATE *state) {
+    if (state == NULL) { return NULL; }
+
     struct NODE *node = empty_node();
     node->id = state->id;
     if (state->is_final) {
@@ -248,7 +250,6 @@ void print_nodes(struct LIST *list) {
 }
 
 struct DIGRAPH *minimize(struct DIGRAPH *graph) {
-    printf("\n");
     struct DIGRAPH *minimized = empty_digraph();
     minimized->id = "minimized";
     struct LIST *symbols = build_empty_list();
@@ -279,22 +280,18 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
     state->is_initial = 1;
 
     // Creates the initial node of the graph from the initial state
-    struct NODE *from = node_from_state(state);
-    add_node(minimized, from);  // Adds the initial node to the graph
+    // and adds it to the graph
+    add_node(minimized, node_from_state(state));
     minimized->starting_node = state->id;
 
     while (state != NULL) {
-        printf("Current state: { id = %s, nodes = ", state->id);
-        print_nodes(state->nodes);
-        printf(" }\n");
         mark_state(marked_states, state);
 
+        struct NODE *from = get_node(minimized, state->id);
         struct L_NODE *symbol = symbols->first;
         while (symbol != NULL) {
             struct LIST *moves = move(state->nodes, graph, (char *) symbol->value);
             struct LIST *nodes = closure(moves, graph);
-            printf("Closure(Move on %s): ", (char *) symbol->value);
-            print_nodes(nodes);
 
             if (nodes->size != 0) {
                 struct STATE *candidate = new_state(NULL, nodes);
@@ -312,6 +309,7 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
                 }
 
                 // Adds a transition from node `from` to node `to` on `symbol`.
+                printf("Addign edge from [%s] to [%s] on symbol [%s]\n", from->id, to->id, (char *) symbol->value);
                 add_edge(minimized, edge_from_states(from, to, (char *) symbol->value));
             }
 
