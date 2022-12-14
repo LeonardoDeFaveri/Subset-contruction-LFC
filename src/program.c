@@ -42,6 +42,26 @@ int streqi(const char *s1, const char *s2) {
     return 0;
 }
 
+void set_defaults_for_nodes(void *key, size_t ksize, uintptr_t value, void *usr) {
+    if (usr == NULL) { return; }
+
+    struct NODE *default_node_attr = (struct NODE *) usr;
+    set_default_node_attr((struct NODE *) value, default_node_attr);
+}
+
+void set_defaults_for_edges(void *key, size_t ksize, uintptr_t value, void *usr) {
+    if (usr == NULL) { return; }
+
+    struct EDGE *default_edge_attr = (struct EDGE *) usr;
+    struct LIST *eges = (struct LIST *) value;
+
+    struct L_NODE *item = eges->first;
+    while (item != NULL) {
+        set_default_edge_attr((struct EDGE *) item->value, default_edge_attr);
+        item = item->next;
+    }
+}
+
 void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
     free(args->id);
     destroy_list(args->nodes);
@@ -50,36 +70,119 @@ void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
     destroy_digraph(graph);
 }
 
-void print_edge(void* key, size_t ksize, uintptr_t value, void* usr) {
-    struct LIST *edges = (struct LIST *) value;
-    
-    struct L_NODE *node = edges->first;
-    while (node != NULL) {
-        struct EDGE *edge = (struct EDGE *) node->value;
-        printf("Edge(%s->%s) {\n", edge->from, edge->to);
-        printf("\t label: %s\n", edge->label);
-        printf("\t style: %s\n", edge->style);
-        printf("\t font_name: %s\n", edge->font_name);
-        printf("}\n");
-        node = node->next;
+void write_node_attr(struct NODE *node, FILE *out) {
+    short has_prev = 0;
+    if (node->label != NULL) {
+        fprintf(out, "label = \"%s\"", node->label);
+        has_prev = 1;
+    }
+    if (node->shape != NULL) {
+        if (has_prev) {
+            fprintf(out, ", ");
+        }
+        fprintf(out, "shape = \"%s\"", node->shape);
+        has_prev = 1;
+    }
+    if (node->style != NULL) {
+        if (has_prev) {
+            fprintf(out, ", ");
+        }
+        fprintf(out, "style = \"%s\"", node->style);
+        has_prev = 1;
+    }
+    if (node->font_name != NULL) {
+        if (has_prev) {
+            fprintf(out, ", ");
+        }
+        fprintf(out, "fontname = \"%s\"", node->font_name);
+        has_prev = 1;
+    }
+    if (node->fill_color != NULL) {
+        if (has_prev) {
+            fprintf(out, ", ");
+        }
+        fprintf(out, "fillcolor = \"%s\"", node->fill_color);
+        has_prev = 1;
+    }
+    if (node->color_scheme != NULL) {
+        if (has_prev) {
+            fprintf(out, ", ");
+        }
+        fprintf(out, "colorscheme = \"%s\"", node->color_scheme);
+        has_prev = 1;
     }
 }
 
-void print_node(void* key, size_t ksize, uintptr_t value, void* usr) {
-    struct NODE *node = (struct NODE *) value;
-    printf("Node[%s] {\n", node->id);
-    printf("\t label: %s\n", node->label);
-    printf("\t shape: %s\n", node->shape);
-    printf("\t style: %s\n", node->style);
-    printf("\t fill_color: %s\n", node->fill_color);
-    printf("\t font_name: %s\n", node->font_name);
-    printf("\t color_scheme: %s\n", node->color_scheme);
-    printf("}\n");
+void write_edge_attr(struct EDGE *edge, FILE *out) {
+    short has_prev = 0;
+    if (edge->label != NULL) {
+        fprintf(out, "label = \"%s\"", edge->label);
+        has_prev = 1;
+    }
+    if (edge->style != NULL) {
+        if (has_prev) {
+            fprintf(out, ", ");
+        }
+        fprintf(out, "style = \"%s\"", edge->style);
+        has_prev = 1;
+    }
+    if (edge->font_name != NULL) {
+        if (has_prev) {
+            fprintf(out, ", ");
+        }
+        fprintf(out, "fontname = \"%s\"", edge->font_name);
+        has_prev = 1;
+    }
 }
 
-void print_sym(void* key, size_t ksize, uintptr_t value, void* usr) {
-    char *symbol = (char *) value;
-    printf("%s\n", symbol);
+void save_aux(void *key, size_t ksize, uintptr_t value, void *usr) {
+    if (usr == NULL) { return; }
+
+    void **data = (void **) usr;
+    FILE *out = (FILE *) data[0];
+    struct DIGRAPH *graph = (struct DIGRAPH *) data[1];
+    struct NODE *node = (struct NODE *) value;
+
+    fprintf(out, "\t\"%s\" [", node->id);
+    write_node_attr(node, out);
+    fprintf(out, "]\n");
+
+    struct LIST *edges = get_outgoing_from(graph, node->id);
+    struct L_NODE *item = edges->first;
+    while (item != NULL) {
+        struct EDGE *edge = (struct EDGE *) item->value;
+        fprintf(out, "\t\"%s\" -> \"%s\" [", edge->from, edge->to);
+        write_edge_attr(edge, out);
+        fprintf(out, "]\n");
+        item = item->next;
+    }
+
+    fprintf(out, "\n");
+}
+
+void save(FILE *out, struct DIGRAPH *graph, struct NODE *default_node, struct EDGE *default_edge) {
+    fprintf(out, "digraph \"%s\" {\n", graph->id);
+    
+    if (default_node != NULL) {
+        fprintf(out, "\tnode [");
+        write_node_attr(default_node, out);
+        fprintf(out, "]\n");
+    }
+    if (default_edge != NULL) {
+        fprintf(out, "\tedge [");
+        write_edge_attr(default_edge, out);
+        fprintf(out, "]\n");
+    }
+    fprintf(out, "\n");
+
+    void **data = malloc(sizeof(void *) * 2);
+    data[0] = (void *) out;
+    data[1] = (void *) graph;
+    hashmap_iterate(graph->nodes, save_aux, (void *) data);
+    free(data);
+
+    fprintf(out, "}\n");
+    fflush(out);
 }
 
 int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
@@ -124,14 +227,18 @@ int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
     }
 
     hashmap_remove(graph->symbols, "eps", 3);
-    struct DIGRAPH *minimized_graph = minimize(graph);
-    printf("Minimized graph\n\n");
-    printf("Nodes:\n");
-    hashmap_iterate(minimized_graph->nodes, print_node, NULL);
-    printf("Edges:\n");
-    hashmap_iterate(minimized_graph->edges, print_edge, NULL);
+    struct DIGRAPH *dfa = build_dfa(graph);
 
-    destroy_digraph(minimized_graph);
+    //hashmap_iterate(dfa->nodes, set_defaults_for_nodes, (void *) args->default_node);
+    //hashmap_iterate(dfa->edges, set_defaults_for_edges, (void *) args->default_edge);
+
+    FILE *out = fopen("out.dot", "w");
+    if (out == NULL) {
+        fprintf(stderr, "Error: couldn't open output file: out.dot\n");
+        destroy_digraph(dfa);
+        return 1;
+    }
+    save(out, dfa, args->default_node, args->default_edge);
 
     return 0;
 }

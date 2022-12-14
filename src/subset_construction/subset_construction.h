@@ -34,18 +34,20 @@ void prepare_mfs(void *key, size_t ksize, uintptr_t value, void *usr);
 void hashmap_to_list(void *key, size_t ksize, uintptr_t value, void *usr);
 
 void populate_move(void *key, size_t ksize, uintptr_t value, void *usr);
-/// Creates a list of all nodes that can be reached by nodes in `nodes` via
+/// Creates a list of all node ids that can be reached by nodes in `nodes` via
 /// a transition on `symbol`.
 struct LIST *move(struct LIST *nodes, struct DIGRAPH *graph, char *symbol);
 
 /// `node_set` is a list of node ids. `edges` is a `hashmap` of all the edges
-/// of the graph. Returns a list of the nodes which are part of the closure of
+/// of the graph. Returns a list of the node id which are part of the closure of
 /// `node_set`.
 struct LIST *closure(struct LIST *node_set, struct DIGRAPH *graph);
 
 /// Converts `id` into a string using the mininum required bytes.
 char *parse_id(int id);
 
-struct DIGRAPH *minimize(struct DIGRAPH *graph);
+/// Implements the subset_construction algorithm which build a DFA
+/// from an NFA.
+struct DIGRAPH *build_dfa(struct DIGRAPH *graph);
 
 #endif

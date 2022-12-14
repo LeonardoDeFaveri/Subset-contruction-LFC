@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "subset_construction.h"
-#include "../merge_find_set/merge_find_set.h"
 #include "../program.h"
 
 // Function for sorted insertion of string values
@@ -230,44 +229,30 @@ struct STATE *find_duplicate(struct STATE *state, struct LIST *unmarked_states, 
     return *dup_ref;
 }
 
-void print_nodes(struct LIST *list) {
-    if (list == NULL) {
-        printf("NULL\n");
-        return;
-    }
-    printf("[");
-
-    struct L_NODE *node = list->first;
-    while (node != NULL) {
-        printf("%s", (char *) node->value);
-        if (node->next != NULL) {
-            printf(", ");
+short is_final(struct STATE *state, struct DIGRAPH *graph) {
+    struct L_NODE *item = state->nodes->first;
+    while (item != NULL) {
+        if (get_node(graph, (char *) item->value)->is_final) {
+            return 1;
         }
-        node = node->next;
+        item = item->next;
     }
 
-    printf("]\n");
+    return 0;
 }
 
-struct DIGRAPH *minimize(struct DIGRAPH *graph) {
-    struct DIGRAPH *minimized = empty_digraph();
-    minimized->id = "minimized";
+void print_node(void *key, size_t ksize, uintptr_t value, void *usr) {
+    struct NODE *node = (struct NODE *) value;
+    printf("NODE [%s] {\n", node->id);
+    printf("\tshape = %s\n", node->shape);
+    printf("}\n");
+}
+
+struct DIGRAPH *build_dfa(struct DIGRAPH *graph) {
+    struct DIGRAPH *dfa = empty_digraph();
+    dfa->id = "DFA";
     struct LIST *symbols = build_empty_list();
     hashmap_iterate(graph->symbols, hashmap_to_list, (void *) symbols);
-
-    /*hashmap *mfs_nodes = hashmap_create();
-    struct MFS *initial = make_mfs();
-
-    *************************************************************************
-     Initializes a support hashmap that maps node ids to their representation
-     as `struct MFS_ITEM`.
-    void **data = malloc(sizeof(void *) * 2);
-    data[0] = (void *) mfs_nodes;
-    data[1] = (void *) initial;
-    hashmap_iterate(graph->nodes, prepare_mfs, (void *) data);
-    free(data);
-    *************************************************************************
-    */
 
     int state_id = 0;
     hashmap *marked_states = hashmap_create();
@@ -281,13 +266,13 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
 
     // Creates the initial node of the graph from the initial state
     // and adds it to the graph
-    add_node(minimized, node_from_state(state));
-    minimized->starting_node = state->id;
+    add_node(dfa, node_from_state(state));
+    dfa->starting_node = state->id;
 
     while (state != NULL) {
         mark_state(marked_states, state);
 
-        struct NODE *from = get_node(minimized, state->id);
+        struct NODE *from = get_node(dfa, state->id);
         struct L_NODE *symbol = symbols->first;
         while (symbol != NULL) {
             struct LIST *moves = move(state->nodes, graph, (char *) symbol->value);
@@ -301,16 +286,18 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
                 // Creates a new node in the graph and a new state
                 if (dup == NULL) {
                     candidate->id = parse_id(state_id++);
+                    if (is_final(candidate, graph) != 0) {
+                        candidate->is_final = 1;
+                    }
                     to = node_from_state(candidate);
-                    add_node(minimized, to);
+                    add_node(dfa, to);
                     push_back(unmarked_states, (void *) candidate);
                 } else {
-                    to = get_node(minimized, dup->id);
+                    to = get_node(dfa, dup->id);
                 }
 
                 // Adds a transition from node `from` to node `to` on `symbol`.
-                printf("Addign edge from [%s] to [%s] on symbol [%s]\n", from->id, to->id, (char *) symbol->value);
-                add_edge(minimized, edge_from_states(from, to, (char *) symbol->value));
+                add_edge(dfa, edge_from_states(from, to, (char *) symbol->value));
             }
 
             symbol = symbol->next;
@@ -319,5 +306,5 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
         state = (struct STATE *) pop_first(unmarked_states);
     }
 
-    return minimized;
+    return dfa;
 }
