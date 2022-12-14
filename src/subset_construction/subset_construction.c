@@ -224,6 +224,7 @@ struct STATE *find_duplicate(struct STATE *state, struct LIST *unmarked_states, 
     data[0] = (void *) &state_hash;
     data[1] = (void *) dup_ref;
     hashmap_iterate(marked_states, find_duplicate_aux, (void *) data);
+    free(data);
     return *dup_ref;
 }
 
@@ -256,15 +257,15 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
     /*hashmap *mfs_nodes = hashmap_create();
     struct MFS *initial = make_mfs();
 
-    //*************************************************************************
-    // Initializes a support hashmap that maps node ids to their representation
-    // as `struct MFS_ITEM`.
+    *************************************************************************
+     Initializes a support hashmap that maps node ids to their representation
+     as `struct MFS_ITEM`.
     void **data = malloc(sizeof(void *) * 2);
     data[0] = (void *) mfs_nodes;
     data[1] = (void *) initial;
     hashmap_iterate(graph->nodes, prepare_mfs, (void *) data);
     free(data);
-    //*************************************************************************
+    *************************************************************************
     */
 
     int state_id = 0;
