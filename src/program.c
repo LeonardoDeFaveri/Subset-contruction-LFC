@@ -123,7 +123,15 @@ int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
         return error;
     }
 
+    hashmap_remove(graph->symbols, "eps", 3);
     struct DIGRAPH *minimized_graph = minimize(graph);
+    printf("Minimized graph\n\n");
+    printf("Nodes:\n");
+    hashmap_iterate(minimized_graph->nodes, print_node, NULL);
+    printf("Edges:\n");
+    hashmap_iterate(minimized_graph->edges, print_edge, NULL);
+
+    destroy_digraph(minimized_graph);
 
     return 0;
 }

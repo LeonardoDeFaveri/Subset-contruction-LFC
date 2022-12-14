@@ -26,6 +26,9 @@ typedef struct hashmap hashmap;
 // `usr` is a user pointer which can be passed through `hashmap_iterate`.
 typedef void (*hashmap_callback)(void *key, size_t ksize, uintptr_t value, void *usr);
 
+// FNV-1a hash function
+uint32_t hash_data(const unsigned char* data, size_t size);
+
 hashmap* hashmap_create(void);
 
 // only frees the hashmap object and buckets.

@@ -42,8 +42,6 @@ NUMBER			[-]?{DIGIT}+(.[0-9]+)?
 "node"          { return(NODE); }
 "edge"          { return(EDGE); }
 
-"eps"           { return(EPS); }
-
 ","				{ return(COMMA); }
 ";"				{ return(SEMI_COLON); }
 

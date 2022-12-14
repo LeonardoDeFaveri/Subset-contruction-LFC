@@ -18,6 +18,8 @@ struct PARSE_ARGS {
 struct PARSE_ARGS *empty_args();
 struct PARSE_ARGS *get(void *args);
 
+/// Checks if `s1=s2`. The check is not case-sensitive and the returned
+/// value is `0` if `s1=s2`, `1` otherwise.
 int streqi(const char *s1, const char *s2);
 void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph);
 
