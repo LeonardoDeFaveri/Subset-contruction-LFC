@@ -9,7 +9,6 @@
     #include "../src/digraph/digraph.h"
     #include "../src/list/list.h"
     #include "../src/map/map.h"
-    #include "../src/merge_find_set/merge_find_set.h"
 
     extern FILE *yyin;
 

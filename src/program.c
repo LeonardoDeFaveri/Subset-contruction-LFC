@@ -7,7 +7,6 @@
 
 #include "program.h"
 #include "map/map.h"
-#include "merge_find_set/merge_find_set.h"
 #include "list/list.h"
 #include "digraph/digraph.h"
 #include "subset_construction/subset_construction.h"

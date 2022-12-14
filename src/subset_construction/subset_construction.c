@@ -94,20 +94,6 @@ uint32_t hash(struct STATE *state) {
     return hash_data((const unsigned char *) state->key, state->key_length);
 }
 
-/// `usr` must be an array of `void` in which `usr[0]` is a `hashmap *` and
-/// `usr[1]` a `struct MFS *`. Populates `usr[0]` with instances of
-/// `struct MFS_ITEM` and creates a set in `usr[1]` for each `value`.
-void prepare_mfs(void *key, size_t ksize, uintptr_t value, void *usr) {
-    if (usr == NULL) { return; }
-
-    void **data = (void **) usr;
-    hashmap *nodes = (hashmap *) data[0];
-    struct MFS *mfs = (struct MFS *) data[1];
-
-    void *mfs_item = (void *) make_set(mfs, (void *) value);
-    hashmap_set(nodes, key, ksize, (uintptr_t) mfs_item);
-}
-
 void hashmap_to_list(void *key, size_t ksize, uintptr_t value, void *usr) {
     struct LIST *list = usr;
     push_back(list, (void *) value);

@@ -1,0 +1,15 @@
+digraph "DFA" {
+	node [shape = "circle", fontname = "courier", fillcolor = "1", colorscheme = "paired6"]
+	edge [fontname = "courier"]
+
+	"0" []
+	"0" -> "1" [label = "a"]
+
+	"1" [shape = "doublecircle"]
+	"1" -> "0" [label = "a"]
+	"1" -> "2" [label = "b"]
+
+	"2" []
+	"2" -> "1" [label = "a"]
+
+}
