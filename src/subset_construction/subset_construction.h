@@ -37,14 +37,11 @@ void populate_move(void *key, size_t ksize, uintptr_t value, void *usr);
 /// Creates a list of all nodes that can be reached by nodes in `nodes` via
 /// a transition on `symbol`.
 struct LIST *move(struct LIST *nodes, struct DIGRAPH *graph, char *symbol);
-/// Auxiliary function used to decide wheter or not `value` must be included
-/// into the closure. `value` is of type `struct EDGE *` and `usr` must be
-// a `struct LIST *`.
-void populate_closure(void *key, size_t ksize, uintptr_t value, void *usr);
+
 /// `node_set` is a list of node ids. `edges` is a `hashmap` of all the edges
 /// of the graph. Returns a list of the nodes which are part of the closure of
 /// `node_set`.
-struct LIST *closure(struct LIST *node_set, hashmap *edges);
+struct LIST *closure(struct LIST *node_set, struct DIGRAPH *graph);
 
 /// Converts `id` into a string using the mininum required bytes.
 char *parse_id(int id);

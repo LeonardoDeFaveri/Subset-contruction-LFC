@@ -62,30 +62,32 @@ void calculate_key(struct STATE *state) {
 
     int len = strlen((char *) state->nodes->last->value);
     unsigned long size = sizeof(char) * len * state->nodes->size;
-    char *key = malloc(size + 1);
+    size += state->nodes->size - 1; // Between every node there's a separator
+    char *key = malloc(size);
 
     unsigned long key_i = 0;
     
-    struct L_NODE *node = (struct L_NODE *)state->nodes->first;
+    struct L_NODE *node = (struct L_NODE *) state->nodes->first;
     while (node != NULL) {
         char *id = (char *) ((struct NODE *) node->value);
         while (*id != '\0') {
-            key[key_i] = *id;
-            key_i++;
+            key[key_i++] = *id;
             id++;
         }
         node = node->next;
+        if (node != NULL) {
+            key[key_i++] = ',';
+        }
     }
     key[key_i] = '\0';
 
-    state->key_length = key_i + 1;
+    state->key_length = key_i;
     state->key = key;
 }
 
 uint32_t hash(struct STATE *state) {
     if (state->key == NULL) {
         calculate_key(state);
-        printf("state %s: key = %s\n", state->id, state->key);
     }
 
     return hash_data((const unsigned char *) state->key, state->key_length);
@@ -118,12 +120,13 @@ struct LIST *move(struct LIST *nodes, struct DIGRAPH *graph, char *symbol) {
         struct NODE *node = (struct NODE *) item;
         struct LIST *edges = get_outgoing_from(graph, node->id);
 
-        struct EDGE *edge = pop_first(edges);
-        while (edge != NULL) {
+        struct L_NODE *item2 = edges->first;
+        while (item2 != NULL) {
+            struct EDGE *edge = (struct EDGE *) item2->value;
             if (strcmp(edge->label, symbol) == 0) {
                 hashmap_set(tmp, (void *) edge->to, strlen(edge->to), (uintptr_t) edge->to);
             }
-            edge = pop_first(edges);
+            item2 = item2->next;
         }
 
         item = item->next;
@@ -143,7 +146,7 @@ void populate_closure(void *key, size_t ksize, uintptr_t value, void *usr) {
     struct L_NODE *item = edges->first;
     while (item != NULL) {
         struct EDGE *edge = (struct EDGE *) item->value;
-        if (streqi(edge->label, "eps") == 0) {
+        if (strcmp(edge->label, "eps") == 0) {
             hashmap_set(set, (void *) edge->to, strlen(edge->to), (uintptr_t) edge->to);
             //push_sorted_unique(set, (void *) edge->to, cmp);
             //push_back(set, (void *) edge->to);
@@ -155,17 +158,27 @@ void populate_closure(void *key, size_t ksize, uintptr_t value, void *usr) {
 /// `node_set` is a list of node ids. `edges` is a `hashmap` of all the edges
 /// of the graph. Returns a list of the nodes which are part of the closure of
 /// `node_set`.
-struct LIST *closure(struct LIST *node_set, hashmap *edges) {
+struct LIST *closure(struct LIST *node_set, struct DIGRAPH *graph) {
     struct LIST *result = build_empty_list();
     hashmap *tmp = hashmap_create();
     if (length(node_set) == 0) { return result; }
 
-    char *id = (char *) pop_first(node_set);
-    while (id != NULL) {
-        hashmap_set(tmp, (void *) id, strlen(id), (uintptr_t) id);
+    struct L_NODE *item = node_set->first;
+    while (item != NULL) {
+        void *id = item->value;
+        hashmap_set(tmp, (void *) id, strlen((char *) id), (uintptr_t) id);
         //push_sorted_unique(result, (void *) id, cmp);
-        hashmap_iterate(edges, populate_closure, (void *) tmp);
-        id = pop_first(node_set);
+        struct LIST *edges = get_outgoing_from(graph, (char *) id);
+        struct L_NODE *item2 = edges->first;
+        while (item2 != NULL) {
+            struct EDGE *edge = (struct EDGE *) item2->value;
+            if (strcmp(edge->label, "eps") == 0) {
+                hashmap_set(tmp, (void *) edge->to, strlen(edge->to), (uintptr_t) edge->to);
+            }
+            item2 = item2->next;
+        }
+
+        item = item->next;
     }
 
     hashmap_iterate(tmp, hashmap_to_list, (void *) result);
@@ -187,9 +200,10 @@ void find_duplicate_aux(void *key, size_t ksize, uintptr_t value, void *usr) {
 
     void **data = (void **) usr;
     uint32_t state_hash = *((uint32_t *) data[0]);
-    
-    if (hash((struct STATE *) value) == state_hash) {
-        data[1] = (void *) value;
+    struct STATE **dup_ref = (struct STATE **) data[1];
+    struct STATE *state = (struct STATE *) value;
+    if (state_hash == hash(state)) {
+        *dup_ref = state;
     }
 }
 
@@ -205,11 +219,12 @@ struct STATE *find_duplicate(struct STATE *state, struct LIST *unmarked_states, 
     }
 
     struct STATE *duplicate = NULL;
+    struct STATE **dup_ref = &duplicate;
     void **data = malloc(sizeof(void *) * 2);
     data[0] = (void *) &state_hash;
-    data[1] = (void *) &duplicate;
+    data[1] = (void *) dup_ref;
     hashmap_iterate(marked_states, find_duplicate_aux, (void *) data);
-    return duplicate;
+    return *dup_ref;
 }
 
 void print_nodes(struct LIST *list) {
@@ -232,6 +247,7 @@ void print_nodes(struct LIST *list) {
 }
 
 struct DIGRAPH *minimize(struct DIGRAPH *graph) {
+    printf("\n");
     struct DIGRAPH *minimized = empty_digraph();
     minimized->id = "minimized";
     struct LIST *symbols = build_empty_list();
@@ -256,13 +272,9 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
     struct LIST *unmarked_states = build_empty_list();
 
     // Creates the initial state
-    struct STATE *state = new_state(parse_id(state_id), build_empty_list());
+    struct STATE *state = new_state(parse_id(state_id++), build_empty_list());
     push_back(state->nodes, (void *) graph->starting_node);
-    state->nodes = closure(state->nodes, graph->edges);
-    
-    printf("Closure 0: ");
-    print_nodes(state->nodes);
-    
+    state->nodes = closure(state->nodes, graph);    
     state->is_initial = 1;
 
     // Creates the initial node of the graph from the initial state
@@ -271,19 +283,17 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
     minimized->starting_node = state->id;
 
     while (state != NULL) {
+        printf("Current state: { id = %s, nodes = ", state->id);
+        print_nodes(state->nodes);
+        printf(" }\n");
         mark_state(marked_states, state);
 
         struct L_NODE *symbol = symbols->first;
         while (symbol != NULL) {
             struct LIST *moves = move(state->nodes, graph, (char *) symbol->value);
-
-            printf("Move on %s: ", (char *) symbol->value);
-            print_nodes(moves);
-
-            struct LIST *nodes = closure(moves, graph->edges);
-
-            printf("Closure: ");
-            print_nodes(moves);
+            struct LIST *nodes = closure(moves, graph);
+            printf("Closure(Move on %s): ", (char *) symbol->value);
+            print_nodes(nodes);
 
             if (nodes->size != 0) {
                 struct STATE *candidate = new_state(NULL, nodes);
@@ -296,7 +306,8 @@ struct DIGRAPH *minimize(struct DIGRAPH *graph) {
                     to = node_from_state(candidate);
                     add_node(minimized, to);
                     push_back(unmarked_states, (void *) candidate);
-                    dup = candidate;
+                } else {
+                    to = get_node(minimized, dup->id);
                 }
 
                 // Adds a transition from node `from` to node `to` on `symbol`.

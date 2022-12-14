@@ -207,7 +207,7 @@ void add_node(struct DIGRAPH *graph, struct NODE *node) {
 
 struct LIST *get_outgoing_from(struct DIGRAPH *graph, char *source) {
     uintptr_t result;
-    if (hashmap_get_set(graph->edges, source, strlen(source), &result)) {
+    if (hashmap_get(graph->edges, source, strlen(source), &result)) {
         return (struct LIST *) result;
     }
     return NULL;
