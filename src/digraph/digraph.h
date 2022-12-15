@@ -3,10 +3,10 @@
 
 #include "../map/map.h"
 
+/// A node in a graph.
 struct NODE {
     char *id;
     short is_final;
-
     char *font_name;
     char *shape;
     char *color_scheme;
@@ -15,6 +15,7 @@ struct NODE {
     char *style;
 };
 
+/// An edge in a graph.
 struct EDGE {
     /// Identifier of the originating node
     char *from;
@@ -25,16 +26,26 @@ struct EDGE {
     char *style;
 };
 
+/// A graph.
 struct DIGRAPH {
     char *id;
+    /// Id of starting noe
     char *starting_node;
+    /// Hashmap of all nodes. Node ids are used as key
     hashmap *nodes;
+    /// Hashmap of all edges. Node ids are used ad key and the value is a
+    /// list of edges that goes out of the node with that id.
     hashmap *edges;
+    /// Hashmap of transition sumbols (aka edge labels)
     hashmap *symbols;
 };
 
+/// Creates an empty node with every attribute set to `NULL`.
 struct NODE* empty_node();
+/// Creates an empty edge with every attributes set to NULL.
 struct EDGE* empty_edge();
+/// Creates an empty graph with every hashmap initialized and other
+/// attributes set to `NULL`.
 struct DIGRAPH* empty_digraph();
 
 /// Sets the `NODE` attribute corresponding to `attr_name` to `attr_value`.

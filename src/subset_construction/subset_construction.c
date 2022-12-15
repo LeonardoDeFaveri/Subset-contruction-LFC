@@ -54,6 +54,8 @@ struct EDGE *edge_from_states(struct NODE *from, struct NODE *to, char *symbol) 
     return edge;
 }
 
+/// Function used to determine the key of `state`. Key value and its
+/// length are properly set into `state`.
 void calculate_key(struct STATE *state) {
     if (state->nodes->size == 0) {
         state->key_length = 1; // 1 because of '\0'
@@ -94,6 +96,8 @@ uint32_t hash(struct STATE *state) {
     return hash_data((const unsigned char *) state->key, state->key_length);
 }
 
+/// `usr` must be a pointer to an initialized list. It might be empty or not.
+/// If it's not, hashmap values are push back into the list.
 void hashmap_to_list(void *key, size_t ksize, uintptr_t value, void *usr) {
     struct LIST *list = usr;
     push_back(list, (void *) value);
@@ -124,6 +128,7 @@ struct LIST *move(struct LIST *nodes, struct DIGRAPH *graph, char *symbol) {
     return result;
 }
 
+/// `usr` must be a pointer to a hashmap (`hashmap *`). The hashmap hold node ids.
 void populate_closure(void *key, size_t ksize, uintptr_t value, void *usr) {
     if (usr == NULL) { return; }
 
@@ -143,8 +148,8 @@ void populate_closure(void *key, size_t ksize, uintptr_t value, void *usr) {
 }
 
 /// `node_set` is a list of node ids. `edges` is a `hashmap` of all the edges
-/// of the graph. Returns a list of the nodes which are part of the closure of
-/// `node_set`.
+/// of the graph. Returns a list of the nodes (node ids) which are part of the
+/// closure of `node_set`.
 struct LIST *closure(struct LIST *node_set, struct DIGRAPH *graph) {
     struct LIST *result = build_empty_list();
     hashmap *tmp = hashmap_create();
@@ -173,6 +178,7 @@ struct LIST *closure(struct LIST *node_set, struct DIGRAPH *graph) {
     return result;
 }
 
+/// Given an integer value, return is's string representation.
 char *parse_id(int id) {
     char *str = NULL;
     int len = snprintf(str, 0, "%d", id);
@@ -194,6 +200,9 @@ void find_duplicate_aux(void *key, size_t ksize, uintptr_t value, void *usr) {
     }
 }
 
+/// Given a state return an equivalent state, if any, by looking for into into
+/// the list of `unmarked_states` and the hashmap of `marked_states`. If no
+/// duplicate is found, then `NULL` is returned.
 struct STATE *find_duplicate(struct STATE *state, struct LIST *unmarked_states, hashmap *marked_states) {
     uint32_t state_hash = hash(state);
 
@@ -215,6 +224,8 @@ struct STATE *find_duplicate(struct STATE *state, struct LIST *unmarked_states, 
     return *dup_ref;
 }
 
+/// Checks if `state` is final by going through its included nodes
+/// and checking if at least one of them is final.
 short is_final(struct STATE *state, struct DIGRAPH *graph) {
     struct L_NODE *item = state->nodes->first;
     while (item != NULL) {
@@ -225,13 +236,6 @@ short is_final(struct STATE *state, struct DIGRAPH *graph) {
     }
 
     return 0;
-}
-
-void print_node(void *key, size_t ksize, uintptr_t value, void *usr) {
-    struct NODE *node = (struct NODE *) value;
-    printf("NODE [%s] {\n", node->id);
-    printf("\tshape = %s\n", node->shape);
-    printf("}\n");
 }
 
 struct DIGRAPH *build_dfa(struct DIGRAPH *graph) {
