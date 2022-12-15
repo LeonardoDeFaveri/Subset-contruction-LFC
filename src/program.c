@@ -39,7 +39,11 @@ int streqi(const char *s1, const char *s2) {
         }
     }
 
-    return 0;
+    if (*s1 == '\0' && *s2 == '\0') {
+        return 0;
+    }
+
+    return 1;
 }
 
 void set_defaults_for_nodes(void *key, size_t ksize, uintptr_t value, void *usr) {
@@ -71,6 +75,7 @@ void clean(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
 }
 
 int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
+    short find_final = 0;
     void *item = pop_first(args->nodes);
     while (item != NULL) {
         struct NODE *node = (struct NODE *) item;
@@ -79,9 +84,15 @@ int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
 
         if (streqi(node->shape, "doublecircle") == 0) {
             node->is_final = 1;
+            find_final = 1;
         }
 
         add_node(graph, node);
+    }
+
+    if (find_final == 0) {
+        fprintf(stderr, "No final node. At least one node must be a final node (shape=doublecircle)\n");
+        return 1;
     }
 
     struct NODE *starting_node = get_node(graph, "0");
