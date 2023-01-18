@@ -33,7 +33,7 @@ struct DIGRAPH {
     char *starting_node;
     /// Hashmap of all nodes. Node ids are used as key
     hashmap *nodes;
-    /// Hashmap of all edges. Node ids are used ad key and the value is a
+    /// Hashmap of all edges. Node ids are used as key and the value is a
     /// list of edges that goes out of the node with that id.
     hashmap *edges;
     /// Hashmap of transition sumbols (aka edge labels)

@@ -103,6 +103,11 @@ void hashmap_to_list(void *key, size_t ksize, uintptr_t value, void *usr) {
     push_back(list, (void *) value);
 }
 
+void hashmap_to_sorted_list(void *key, size_t ksize, uintptr_t value, void *usr) {
+    struct LIST *list = (struct LIST *) usr;
+    push_sorted(list, (void *) value, cmp);
+}
+
 struct LIST *move(struct LIST *nodes, struct DIGRAPH *graph, char *symbol) {
     hashmap *tmp = hashmap_create();
 
@@ -165,7 +170,12 @@ struct LIST *closure(struct LIST *node_set, struct DIGRAPH *graph) {
         while (item2 != NULL) {
             struct EDGE *edge = (struct EDGE *) item2->value;
             if (strcmp(edge->label, "eps") == 0) {
-                hashmap_set(tmp, (void *) edge->to, strlen(edge->to), (uintptr_t) edge->to);
+                uintptr_t old;
+                hashmap_get(tmp, (void *) edge->to, strlen(edge->to), &old);
+                if (old == 0) {
+                    hashmap_set(tmp, (void *) edge->to, strlen(edge->to), (uintptr_t) edge->to);
+                    push_back(node_set, (void *) edge->to);
+                }
             }
             item2 = item2->next;
         }
@@ -173,7 +183,7 @@ struct LIST *closure(struct LIST *node_set, struct DIGRAPH *graph) {
         item = item->next;
     }
 
-    hashmap_iterate(tmp, hashmap_to_list, (void *) result);
+    hashmap_iterate(tmp, hashmap_to_sorted_list, (void *) result);
     hashmap_free(tmp);
     return result;
 }
@@ -251,7 +261,7 @@ struct DIGRAPH *build_dfa(struct DIGRAPH *graph) {
     // Creates the initial state
     struct STATE *state = new_state(parse_id(state_id++), build_empty_list());
     push_back(state->nodes, (void *) graph->starting_node);
-    state->nodes = closure(state->nodes, graph);    
+    state->nodes = closure(state->nodes, graph);
     state->is_initial = 1;
 
     // Creates the initial node of the graph from the initial state

@@ -109,12 +109,16 @@ int program(struct PARSE_ARGS *args, struct DIGRAPH *graph) {
         set_default_edge_attr(edge, args->default_edge);
         item = pop_first(args->edges);
 
-        if (get_node(graph, edge->from) != NULL) {
-            add_edge(graph, edge);
-        } else {
+        if (get_node(graph, edge->from) == NULL) {
             fprintf(stderr, "Error on edge (%s->%s): ", edge->from, edge->to);
             fprintf(stderr, "there's no node with id=\"%s\"\n", edge->from);
-            error = 1;
+            error = 1;  
+        } else if (get_node(graph, edge->to) == NULL) {
+            fprintf(stderr, "Error on edge (%s->%s): ", edge->from, edge->to);
+            fprintf(stderr, "there's no node with id=\"%s\"\n", edge->to);
+            error = 1;  
+        } else {
+            add_edge(graph, edge);
         }
     }
 

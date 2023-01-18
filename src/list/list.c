@@ -68,12 +68,12 @@ void push_sorted(struct LIST *list, void *value, cmp_function cmp) {
     while (other != NULL) {
         short res = cmp(value, other->value);
         
-        if (prev_res > 0 && res <= 0) { // previous->value < value <= other->value
+        if (res <= 0) { // previous->value < value <= other->value
             node->next = other;
             previous->next = node;
             break;
         } else { // value > other->value
-            prev_res = res;
+            //prev_res = res;
             previous = other;
             other = other->next;
         }

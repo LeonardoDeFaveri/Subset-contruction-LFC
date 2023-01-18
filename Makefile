@@ -8,7 +8,7 @@ parser: bison-flex/digraph.l bison-flex/digraph.y
 		src/list/list.c src/digraph/digraph.c src/map/map.c \
 		src/subset_construction/subset_construction.c \
 		src/saver/saver.c src/program.c \
-    	-o ./parser
+    	-g -o ./parser
 	rm bison-flex/lex.yy.c
 	rm bison-flex/digraph.tab.h
 	rm bison-flex/digraph.tab.c
